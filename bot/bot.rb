@@ -5,6 +5,7 @@ require "dotenv/load"
 TOKEN = ENV["BOT_TOKEN"]
 WEBAPP = ENV["WEBAPP_URL"]
 
+puts ENV["WEBAPP_URL"]
 Telegram::Bot::Client.run(TOKEN) do |bot|
   bot.listen do |msg|
     next unless msg.text == "/start"
