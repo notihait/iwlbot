@@ -1,6 +1,6 @@
 require "sinatra/base"
 require "json"
-require_relative "../../app/services/telegram_auth_service"
+require_relative "../services/telegram_auth_service"
 
 class AuthController < Sinatra::Base
 
