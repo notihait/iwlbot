@@ -12,10 +12,10 @@ Telegram::Bot::Client.run(TOKEN) do |bot|
     user = msg.from
 
     nick =
-      if user.username
+      if user.first_name
         "@#{user.username}"
       else
-        user.first_name
+        user.username
       end
 
     text = <<~TEXT
