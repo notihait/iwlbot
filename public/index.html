@@ -1,49 +1,26 @@
 <!doctype html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>IWLBOT</title>
+
+  <link rel="stylesheet" href="/styles.css">
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
+
 <body>
-
-<h1>BOOT OK</h1>
-<div id="out">loading...</div>
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<script>
-try {
-  const tg = window.Telegram?.WebApp;
-
-  document.getElementById("out").innerHTML += "<p>tg loaded</p>";
-
-  if (!tg) {
-    document.getElementById("out").innerHTML += "<p>NO TELEGRAM</p>";
-    throw new Error("no tg");
-  }
-
-  tg.ready();
-
-  document.getElementById("out").innerHTML += "<p>ready OK</p>";
-
-  const user = tg.initDataUnsafe?.user;
-
-  document.getElementById("out").innerHTML +=
-    "<p>user: " + JSON.stringify(user) + "</p>";
-
-  if (user) {
-    document.getElementById("out").innerHTML +=
-      "<h2>ID: " + user.id + "</h2>";
-  } else {
-    document.getElementById("out").innerHTML +=
-      "<p>NO USER (open via bot button)</p>";
-  }
-
-} catch (e) {
-  document.getElementById("out").innerHTML +=
-    "<p>ERROR: " + e.message + "</p>";
-}
-</script>
-
+    if (user) {
+        document.getElementById("out").innerHTML +=
+          "<h2>ID: " + user.id + "</h2>";
+      } else {
+        document.getElementById("out").innerHTML +=
+          "<p>NO USER (open via bot button)</p>";
+      }
 </body>
+
+<script src="/app.js"></script>
+
 </html>
