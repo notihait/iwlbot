@@ -4,16 +4,19 @@ tg.ready();
 const telegramUser = tg.initDataUnsafe?.user;
 
 if (!telegramUser) {
-  document.body.innerHTML = "<h2>❌ Откройте приложение через Telegram.</h2>";
+  document.getElementById("app").innerHTML =
+    "<h2>❌ Откройте через Telegram</h2>";
   throw new Error("No Telegram user");
 }
 
 let userId = null;
 
-document.getElementById("app").innerHTML = `
-  <h2>🎁 Мои вишлисты</h2>
+const app = document.getElementById("app");
 
-  <input id="title" placeholder="Название вишлиста">
+app.innerHTML = `
+  <h2>🎁 Вишлисты</h2>
+
+  <input id="title" placeholder="Название">
   <br><br>
 
   <input id="date" type="date">
@@ -51,26 +54,26 @@ async function auth() {
 
 async function loadWishlists() {
   const res = await fetch(`/api/wishlists?user_id=${userId}`);
-  const wishlists = await res.json();
+  const data = await res.json();
 
   const list = document.getElementById("list");
 
-  if (!wishlists.length) {
-    list.innerHTML = "<p>Пока нет вишлистов.</p>";
+  if (!data.length) {
+    list.innerHTML = "<p>Пока пусто</p>";
     return;
   }
 
   list.innerHTML = "";
 
-  wishlists.forEach(w => {
+  data.forEach(w => {
     const div = document.createElement("div");
     div.style.padding = "10px";
-    div.style.marginBottom = "8px";
     div.style.border = "1px solid #ccc";
+    div.style.marginBottom = "8px";
 
     div.innerHTML = `
       <b>${w.title}</b><br>
-      📅 ${w.event_date || "Без даты"}
+      📅 ${w.event_date || "без даты"}
     `;
 
     list.appendChild(div);
@@ -93,7 +96,7 @@ document.getElementById("create").onclick = async () => {
     },
     body: JSON.stringify({
       user_id: userId,
-      title: title,
+      title,
       event_date: date
     })
   });
@@ -101,12 +104,11 @@ document.getElementById("create").onclick = async () => {
   const data = await res.json();
 
   if (data.ok) {
-    document.getElementById("status").innerText = "✅ Вишлист создан";
-
+    document.getElementById("status").innerText = "✅ Создано";
     document.getElementById("title").value = "";
     document.getElementById("date").value = "";
 
-    await loadWishlists();
+    loadWishlists();
   } else {
     document.getElementById("status").innerText = "❌ Ошибка";
   }
@@ -117,10 +119,8 @@ document.getElementById("create").onclick = async () => {
     await auth();
     await loadWishlists();
   } catch (e) {
-    document.getElementById("app").innerHTML = `
-      <h2>Ошибка</h2>
-      <pre>${e.message}</pre>
-    `;
+    document.getElementById("app").innerHTML =
+      `<h2>Ошибка</h2><pre>${e.message}</pre>`;
     console.error(e);
   }
 })();
