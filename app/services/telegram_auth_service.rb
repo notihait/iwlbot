@@ -4,6 +4,7 @@ require_relative "../db/connection"
 
 class TelegramAuthService
   def self.call(init_data)
+    puts "INIT_DATA: #{init_data}"
     # Парсим Telegram initData (правильный способ)
     params = URI.decode_www_form(init_data).to_h
 
