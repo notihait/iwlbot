@@ -4,6 +4,8 @@ require_relative "../../services/telegram_auth_service"
 
 class AuthController < Sinatra::Base
 
+    set :protection, except: :host_authorization
+    
   post "/api/auth" do
     begin
       payload = JSON.parse(request.body.read)
