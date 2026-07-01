@@ -2,10 +2,13 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>test</title>
+  <title>IWLBOT</title>
 </head>
 <body>
-  <h1>Mini App Test</h1>
+
+  <h1>Mini App</h1>
+
+  <p id="user">Loading...</p>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
@@ -14,13 +17,11 @@
 
     tg.ready();
 
-    document.body.innerHTML += `
-      <p>User ID: ${tg.initDataUnsafe?.user?.id}</p>
-      <p>Name: ${tg.initDataUnsafe?.user?.first_name}</p>
-    `;
+    const user = tg.initDataUnsafe?.user;
 
-    console.log("INIT DATA:", tg.initData);
-    console.log("USER:", tg.initDataUnsafe?.user);
+    document.getElementById("user").innerText =
+      user ? "Your ID: " + user.id : "NO USER (open via Telegram)";
   </script>
+
 </body>
 </html>
