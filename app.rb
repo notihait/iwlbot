@@ -4,6 +4,10 @@ require "json"
 set :bind, "0.0.0.0"
 set :port, 4567
 
+get "/" do
+  "IWLBOT OK"
+end
+
 post "/debug" do
   data = JSON.parse(request.body.read)
 
