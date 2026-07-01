@@ -1,4 +1,5 @@
 console.log("APP START");
+console.log("VERSION 2026-07-01-DEBUG");
 
 window.addEventListener("DOMContentLoaded", async () => {
 
