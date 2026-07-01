@@ -3,7 +3,7 @@ require "telegram/bot"
 require "dotenv/load"
 
 TOKEN = ENV["BOT_TOKEN"]
-WEBAPP = "https://iwishlist.ru"
+WEBAPP = ENV["WEBAPP_URL"]
 
 puts ENV["WEBAPP_URL"]
 Telegram::Bot::Client.run(TOKEN) do |bot|
