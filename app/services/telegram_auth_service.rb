@@ -1,6 +1,6 @@
 require "uri"
 require "json"
-require_relative "../db/connection"
+require_relative "../../db/connection"
 
 class TelegramAuthService
   def self.call(init_data)
