@@ -1,0 +1,2 @@
+POST /api/auth
+GET  /

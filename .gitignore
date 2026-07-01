@@ -1,0 +1,35 @@
+# Environment
+.env
+.env.*
+
+# Ruby
+*.gem
+.bundle/
+vendor/bundle
+log/*
+tmp/*
+*.log
+
+# SQLite (если используешь)
+*.sqlite3
+*.sqlite3-journal
+
+# Mac
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# System
+Thumbs.db
+
+# Node (если добавишь фронт билд позже)
+node_modules/
+dist/
+build/
+
+# Ruby cache
+.ruby-version
+.rbenv-version
+.byebug_history

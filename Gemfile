@@ -1,0 +1,6 @@
+gem "sinatra"
+gem "json"
+gem "dotenv"
+gem "telegram-bot-ruby"
+gem "sequel"
+gem "pg"
