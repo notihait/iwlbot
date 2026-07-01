@@ -4,23 +4,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const tg = window.Telegram?.WebApp;
 
-  if (!tg) {
-    document.getElementById("app").innerHTML =
-      "<h2>❌ Telegram WebApp не найден</h2>";
-    return;
-  }
+  if (!tg) return;
 
   tg.ready();
 
   const user = tg.initDataUnsafe?.user;
 
-  if (!user) {
-    document.getElementById("app").innerHTML =
-      "<h2>❌ Открой через Telegram</h2>";
-    return;
-  }
+  if (!user) return;
 
-  // debug блок
   document.getElementById("out").innerHTML = `
     <b>Telegram ID:</b> ${user.id}<br>
     <b>Имя:</b> ${user.first_name}<br>
@@ -29,9 +20,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   let userId = null;
 
-  const app = document.getElementById("app");
-
-  app.innerHTML = `
+  document.getElementById("app").innerHTML = `
     <h2>🎁 Вишлисты</h2>
 
     <input id="title" placeholder="Название">
@@ -98,10 +87,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const title = document.getElementById("title").value.trim();
     const date = document.getElementById("date").value;
 
-    if (!title) {
-      alert("Введите название");
-      return;
-    }
+    if (!title) return;
 
     const res = await fetch("/api/wishlists", {
       method: "POST",
@@ -109,7 +95,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       body: JSON.stringify({
         user_id: userId,
         title,
-        event_date: date
+        event_date: date || null   // 🔥 FIX
       })
     });
 
@@ -117,8 +103,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     if (data.ok) {
       document.getElementById("status").innerText = "✅ Создано";
-      document.getElementById("title").value = "";
-      document.getElementById("date").value = "";
       loadWishlists();
     } else {
       document.getElementById("status").innerText = "❌ Ошибка";

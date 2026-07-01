@@ -3,6 +3,7 @@ require "json"
 require_relative "../db/connection"
 
 class WishlistsController < Sinatra::Base
+
   post "/api/wishlists" do
     payload = JSON.parse(request.body.read)
 
@@ -12,6 +13,9 @@ class WishlistsController < Sinatra::Base
 
     halt 400, { ok: false, error: "title required" }.to_json if title.to_s.strip.empty?
     halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
+
+    # 💥 FIX: empty string -> NULL
+    event_date = nil if event_date.to_s.strip.empty?
 
     result = DB.conn.exec_params(
       "INSERT INTO wishlists (user_id, title, event_date)
@@ -23,6 +27,7 @@ class WishlistsController < Sinatra::Base
     content_type :json
     { ok: true, id: result[0]["id"] }.to_json
   end
+
 
   get "/api/wishlists" do
     user_id = params["user_id"]
@@ -40,4 +45,5 @@ class WishlistsController < Sinatra::Base
     content_type :json
     result.to_a.to_json
   end
+
 end
