@@ -1,13 +1,26 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Mini App</title>
+  <meta charset="utf-8">
+  <title>test</title>
 </head>
 <body>
-  <h1>Loading...</h1>
+  <h1>Mini App Test</h1>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="/app.js"></script>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+
+    tg.ready();
+
+    document.body.innerHTML += `
+      <p>User ID: ${tg.initDataUnsafe?.user?.id}</p>
+      <p>Name: ${tg.initDataUnsafe?.user?.first_name}</p>
+    `;
+
+    console.log("INIT DATA:", tg.initData);
+    console.log("USER:", tg.initDataUnsafe?.user);
+  </script>
 </body>
 </html>
