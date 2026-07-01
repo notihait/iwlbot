@@ -4,23 +4,31 @@ require_relative "../../services/telegram_auth_service"
 
 class AuthController < Sinatra::Base
 
-    set :protection, except: :host_authorization
-    
+  set :protection, except: :host_authorization
+
   post "/api/auth" do
+    content_type :json
+
     begin
       payload = JSON.parse(request.body.read)
 
       init_data = payload["initData"]
-      halt 400, { ok: false, error: "initData required" }.to_json if init_data.to_s.strip.empty?
+
+      if init_data.to_s.strip.empty?
+        status 400
+        return({ ok: false, error: "initData required" }.to_json)
+      end
 
       user_id = TelegramAuthService.call(init_data)
 
-      content_type :json
+      if user_id.nil?
+        status 400
+        return({ ok: false, error: "telegram auth failed" }.to_json)
+      end
+
       { ok: true, user_id: user_id }.to_json
 
-    rescue JSON::ParserError => e
-      puts "AUTH JSON ERROR: #{e.message}"
-
+    rescue JSON::ParserError
       status 400
       { ok: false, error: "invalid json" }.to_json
 
@@ -29,8 +37,7 @@ class AuthController < Sinatra::Base
       puts e.backtrace.join("\n")
 
       status 500
-      content_type :json
-      { ok: false, error: e.message }.to_json
+      { ok: false, error: "internal error" }.to_json
     end
   end
 
