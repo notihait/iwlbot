@@ -11,5 +11,6 @@ set :port, 4567
 set :public_folder, File.join(__dir__, "public")
 
 before do
+    pass if request.path_info.start_with?("/")
     content_type :json
   end
