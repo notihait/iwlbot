@@ -1,6 +1,6 @@
 require "sinatra/base"
 require "json"
-require_relative "../db/connection"
+require_relative "../../db/connection"
 
 class WishlistsController < Sinatra::Base
 
