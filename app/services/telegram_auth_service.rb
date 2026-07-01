@@ -4,15 +4,28 @@ require_relative "../db/connection"
 
 class TelegramAuthService
   def self.call(init_data)
-    puts "INIT_DATA: #{init_data}"
-    # Парсим Telegram initData (правильный способ)
+    puts "=== INIT DATA ==="
+    puts init_data.inspect
+
     params = URI.decode_www_form(init_data).to_h
+
+    puts "=== PARSED PARAMS ==="
+    puts params.inspect
 
     user_json = params["user"]
 
-    raise "user missing in initData" if user_json.nil? || user_json.strip.empty?
+    if user_json.nil? || user_json.strip.empty?
+      puts "❌ USER IS NIL"
+      return nil
+    end
+
+    puts "=== USER JSON ==="
+    puts user_json
 
     user_data = JSON.parse(user_json)
+
+    puts "=== USER DATA ==="
+    puts user_data.inspect
 
     telegram_id = user_data["id"]
     first_name = user_data["first_name"]
@@ -27,6 +40,13 @@ class TelegramAuthService
       RETURNING id
     SQL
 
+    puts "=== DB RESULT ==="
+    puts result.inspect
+
     result[0]["id"]
+  rescue => e
+    puts "🔥 TELEGRAM AUTH ERROR: #{e.message}"
+    puts e.backtrace
+    raise e
   end
 end
