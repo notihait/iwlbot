@@ -11,12 +11,8 @@ Telegram::Bot::Client.run(TOKEN) do |bot|
 
     user = msg.from
 
-    nick = if user.username && !user.username.empty?
-        "@#{user.username}"
-      else
-        user.first_name.to_s
-      end
-      
+    nick = user.username.to_s.empty? ? user.first_name.to_s : "@#{user.username}"
+
     text = <<~TEXT
     👋 Привет, #{nick} ^_^!
 
