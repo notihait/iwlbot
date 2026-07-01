@@ -1,3 +1,6 @@
+console.log("APP START");
+alert("APP START");
+
 const tg = window.Telegram.WebApp;
 tg.ready();
 
