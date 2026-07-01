@@ -45,41 +45,43 @@ window.addEventListener("DOMContentLoaded", async () => {
     <div id="list">Загрузка...</div>
   `;
 
+  // 🔥 AUTH
   async function auth() {
+    const res = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        initData: tg.initData
+      })
+    });
+
+    // ⚠️ защита от HTML-ошибок (403/500)
+    const text = await res.text();
+
+    let data;
     try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          initData: tg.initData
-        })
-      });
-
-      const data = await res.json();
-
-      console.log("AUTH RESPONSE:", data);
-
-      if (!data.ok) {
-        throw new Error(data.error || "Auth failed");
-      }
-
-      if (!data.user_id) {
-        throw new Error("No user_id from backend");
-      }
-
-      userId = data.user_id;
-
-    } catch (err) {
-      console.error("AUTH ERROR:", err);
-      throw err;
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("NON-JSON RESPONSE:", text);
+      throw new Error("Server returned non-JSON (check backend logs)");
     }
+
+    console.log("AUTH RESPONSE:", data);
+
+    if (!data.ok) {
+      throw new Error(data.error || "Auth failed");
+    }
+
+    if (!data.user_id) {
+      throw new Error("No user_id from backend");
+    }
+
+    userId = data.user_id;
   }
 
+  // 🔥 LOAD LIST
   async function loadWishlists() {
-    if (!userId) {
-      console.warn("No userId, skip loading wishlists");
-      return;
-    }
+    if (!userId) return;
 
     const res = await fetch(`/api/wishlists?user_id=${userId}`);
     const data = await res.json();
@@ -108,7 +110,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // 🔥 CREATE
   document.getElementById("create").onclick = async () => {
+
     if (!userId) {
       document.getElementById("status").innerText = "❌ Нет авторизации";
       return;
@@ -148,11 +152,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  // 🔥 INIT
   try {
     await auth();
     await loadWishlists();
   } catch (e) {
-    console.error(e);
+    console.error("INIT ERROR:", e);
     document.getElementById("app").innerHTML =
       `<h2>Ошибка авторизации</h2><pre>${e.message}</pre>`;
   }
