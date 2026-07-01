@@ -1,42 +1,31 @@
-require "uri"
 require "json"
 require "rack/utils"
 require_relative "../../db/connection"
 
 class TelegramAuthService
   def self.call(init_data)
-    puts "=== INIT DATA ==="
-    puts init_data.inspect
-
-    # ✅ FIX: безопасный парсинг Telegram initData
     params = Rack::Utils.parse_nested_query(init_data)
 
-    puts "=== PARSED PARAMS ==="
-    puts params.inspect
+    raw_user = params["user"]
+    raise "no user in initData" if raw_user.to_s.strip.empty?
 
-    user_json = params["user"]
-
-    if user_json.nil? || user_json.strip.empty?
-      puts "❌ USER IS NIL"
-      return nil
+    # 🔥 FIX: иногда приходит URL-encoded JSON
+    decoded_user = begin
+      URI.decode_www_form_component(raw_user)
+    rescue
+      raw_user
     end
 
-    puts "=== USER JSON ==="
-    puts user_json
-
-    begin
-      user_data = JSON.parse(user_json)
-    rescue JSON::ParserError => e
-      puts "🔥 USER JSON PARSE ERROR: #{e.message}"
-      raise e
+    user_data = begin
+      JSON.parse(decoded_user)
+    rescue JSON::ParserError
+      # fallback: иногда уже норм JSON
+      JSON.parse(raw_user)
     end
-
-    puts "=== USER DATA ==="
-    puts user_data.inspect
 
     telegram_id = user_data["id"]
-    first_name = user_data["first_name"]
-    username = user_data["username"]
+    first_name  = user_data["first_name"]
+    username    = user_data["username"]
 
     result = DB.conn.exec_params(<<~SQL, [telegram_id, first_name, username])
       INSERT INTO users (telegram_id, first_name, username)
@@ -47,14 +36,6 @@ class TelegramAuthService
       RETURNING id
     SQL
 
-    puts "=== DB RESULT ==="
-    puts result.inspect
-
     result[0]["id"]
-
-  rescue => e
-    puts "🔥 TELEGRAM AUTH ERROR: #{e.message}"
-    puts e.backtrace.join("\n")
-    raise e
   end
 end
