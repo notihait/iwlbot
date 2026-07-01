@@ -2,57 +2,47 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>DEBUG</title>
+  <title>IWLBOT</title>
 </head>
 <body>
 
-<h1>BOOTING...</h1>
-<div id="out"></div>
-
-<script>
-  function log(msg) {
-    document.getElementById("out").innerHTML += "<p>" + msg + "</p>";
-  }
-
-  log("HTML loaded");
-
-  try {
-    log("loading Telegram script...");
-
-  } catch (e) {
-    log("ERROR INIT: " + e.message);
-  }
-</script>
+<h1>BOOT OK</h1>
+<div id="out">loading...</div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <script>
-  try {
-    log("Telegram object: " + typeof window.Telegram);
+try {
+  const tg = window.Telegram?.WebApp;
 
-    const tg = window.Telegram?.WebApp;
+  document.getElementById("out").innerHTML += "<p>tg loaded</p>";
 
-    if (!tg) {
-      log("NO TELEGRAM WEBAPP");
-      throw new Error("no webapp");
-    }
-
-    tg.ready();
-
-    log("WebApp ready");
-
-    log("initData: " + (tg.initData || "EMPTY"));
-
-    const user = tg.initDataUnsafe?.user;
-
-    log("user: " + JSON.stringify(user));
-
-    document.body.style.background = "#d4ffd4";
-
-  } catch (e) {
-    log("CRASH: " + e.message);
-    document.body.style.background = "#ffd4d4";
+  if (!tg) {
+    document.getElementById("out").innerHTML += "<p>NO TELEGRAM</p>";
+    throw new Error("no tg");
   }
+
+  tg.ready();
+
+  document.getElementById("out").innerHTML += "<p>ready OK</p>";
+
+  const user = tg.initDataUnsafe?.user;
+
+  document.getElementById("out").innerHTML +=
+    "<p>user: " + JSON.stringify(user) + "</p>";
+
+  if (user) {
+    document.getElementById("out").innerHTML +=
+      "<h2>ID: " + user.id + "</h2>";
+  } else {
+    document.getElementById("out").innerHTML +=
+      "<p>NO USER (open via bot button)</p>";
+  }
+
+} catch (e) {
+  document.getElementById("out").innerHTML +=
+    "<p>ERROR: " + e.message + "</p>";
+}
 </script>
 
 </body>
