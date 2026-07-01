@@ -6,6 +6,9 @@ require_relative "./app/controllers/wishlists_controller"
 use AuthController
 use WishlistsController
 
+
+set :host_authorization, permitted_hosts: ["iwishlist.ru", "www.iwishlist.ru"]
+
 set :bind, "0.0.0.0"
 set :port, 4567
 set :public_folder, File.join(__dir__, "public")
