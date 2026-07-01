@@ -4,13 +4,19 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const tg = window.Telegram?.WebApp;
 
-  if (!tg) return;
+  if (!tg) {
+    console.error("Telegram WebApp not found");
+    return;
+  }
 
   tg.ready();
 
   const user = tg.initDataUnsafe?.user;
 
-  if (!user) return;
+  if (!user) {
+    console.error("No Telegram user");
+    return;
+  }
 
   document.getElementById("out").innerHTML = `
     <b>Telegram ID:</b> ${user.id}<br>
@@ -40,28 +46,47 @@ window.addEventListener("DOMContentLoaded", async () => {
   `;
 
   async function auth() {
-    const res = await fetch("/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        initData: tg.initData
-      })
-    });
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData: tg.initData
+        })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!data.ok) throw new Error("Auth failed");
+      console.log("AUTH RESPONSE:", data);
 
-    userId = data.user_id;
+      if (!data.ok) {
+        throw new Error(data.error || "Auth failed");
+      }
+
+      if (!data.user_id) {
+        throw new Error("No user_id from backend");
+      }
+
+      userId = data.user_id;
+
+    } catch (err) {
+      console.error("AUTH ERROR:", err);
+      throw err;
+    }
   }
 
   async function loadWishlists() {
+    if (!userId) {
+      console.warn("No userId, skip loading wishlists");
+      return;
+    }
+
     const res = await fetch(`/api/wishlists?user_id=${userId}`);
     const data = await res.json();
 
     const list = document.getElementById("list");
 
-    if (!data.length) {
+    if (!Array.isArray(data) || data.length === 0) {
       list.innerHTML = "<p>Пока пусто</p>";
       return;
     }
@@ -84,28 +109,42 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   document.getElementById("create").onclick = async () => {
+    if (!userId) {
+      document.getElementById("status").innerText = "❌ Нет авторизации";
+      return;
+    }
+
     const title = document.getElementById("title").value.trim();
     const date = document.getElementById("date").value;
 
-    if (!title) return;
+    if (!title) {
+      document.getElementById("status").innerText = "❌ Введите название";
+      return;
+    }
 
-    const res = await fetch("/api/wishlists", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: userId,
-        title,
-        event_date: date || null   // 🔥 FIX
-      })
-    });
+    try {
+      const res = await fetch("/api/wishlists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          title,
+          event_date: date || null
+        })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.ok) {
-      document.getElementById("status").innerText = "✅ Создано";
-      loadWishlists();
-    } else {
-      document.getElementById("status").innerText = "❌ Ошибка";
+      if (data.ok) {
+        document.getElementById("status").innerText = "✅ Создано";
+        await loadWishlists();
+      } else {
+        document.getElementById("status").innerText = "❌ Ошибка";
+      }
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById("status").innerText = "❌ Сетевая ошибка";
     }
   };
 
@@ -113,9 +152,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     await auth();
     await loadWishlists();
   } catch (e) {
-    document.getElementById("app").innerHTML =
-      `<h2>Ошибка</h2><pre>${e.message}</pre>`;
     console.error(e);
+    document.getElementById("app").innerHTML =
+      `<h2>Ошибка авторизации</h2><pre>${e.message}</pre>`;
   }
 
 });
