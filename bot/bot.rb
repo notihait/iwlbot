@@ -14,7 +14,7 @@ Telegram::Bot::Client.run(TOKEN) do |bot|
     nick = user.first_name.to_s
 
     text = <<~TEXT
-    👋 Привет, #{nick} ^_^!
+    👋 Привет, #{nick}!
 
     🎉 Я бот для управления вишлистами!
 

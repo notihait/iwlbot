@@ -1,31 +1,35 @@
-const tg = window.Telegram?.WebApp;
-
+const tg = window.Telegram.WebApp;
 tg.ready();
 
 const user = tg.initDataUnsafe?.user;
 
-if (!user) {
-  document.body.innerHTML = `
-    <h2>NO USER DATA</h2>
-    <p>Open via Telegram button</p>
-  `;
-} else {
-  document.body.innerHTML = `
-    <h2>Hello ${user.first_name}</h2>
-    <p>ID: ${user.id}</p>
-  `;
-}
+document.body.innerHTML = `
+  <h2>🎁 Create Wishlist</h2>
 
-// безопасный fetch (НЕ ломает страницу)
-try {
-  fetch("/debug", {
+  <input id="title" placeholder="Wishlist title" />
+  <input id="date" type="date" />
+
+  <button id="create">Create</button>
+
+  <div id="status"></div>
+`;
+
+document.getElementById("create").onclick = async () => {
+  const title = document.getElementById("title").value;
+  const date = document.getElementById("date").value;
+
+  const res = await fetch("/api/wishlists", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      initData: tg.initData,
-      user: user
+      user_id: user.id,
+      title,
+      event_date: date
     })
   });
-} catch (e) {
-  console.log("fetch failed", e);
-}
+
+  const data = await res.json();
+
+  document.getElementById("status").innerText =
+    data.ok ? "✅ Created!" : "❌ Error";
+};
