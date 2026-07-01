@@ -70,7 +70,7 @@ async function loadWishlists() {
 
     div.innerHTML = `
       <b>${w.title}</b><br>
-      📅 ${w.event_date ?? "Без даты"}
+      📅 ${w.event_date || "Без даты"}
     `;
 
     list.appendChild(div);
@@ -106,7 +106,7 @@ document.getElementById("create").onclick = async () => {
     document.getElementById("title").value = "";
     document.getElementById("date").value = "";
 
-    loadWishlists();
+    await loadWishlists();
   } else {
     document.getElementById("status").innerText = "❌ Ошибка";
   }
@@ -117,7 +117,10 @@ document.getElementById("create").onclick = async () => {
     await auth();
     await loadWishlists();
   } catch (e) {
-    document.body.innerHTML = `<h2>Ошибка: ${e.message}</h2>`;
+    document.getElementById("app").innerHTML = `
+      <h2>Ошибка</h2>
+      <pre>${e.message}</pre>
+    `;
     console.error(e);
   }
 })();
