@@ -10,7 +10,7 @@ if (!telegramUser) {
 
 let userId = null;
 
-document.body.innerHTML = `
+document.getElementById("app").innerHTML = `
   <h2>🎁 Мои вишлисты</h2>
 
   <input id="title" placeholder="Название вишлиста">

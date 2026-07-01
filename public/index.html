@@ -7,20 +7,39 @@
   <title>IWLBOT</title>
 
   <link rel="stylesheet" href="/styles.css">
-
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
-    if (user) {
-        document.getElementById("out").innerHTML +=
-          "<h2>ID: " + user.id + "</h2>";
-      } else {
-        document.getElementById("out").innerHTML +=
-          "<p>NO USER (open via bot button)</p>";
-      }
-</body>
+
+<div id="debug">
+  <h3>Отладка</h3>
+  <div id="out">Загрузка...</div>
+</div>
+
+<hr>
+
+<div id="app"></div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+
+if (!tg) {
+  document.getElementById("out").innerHTML = "❌ Telegram WebApp не найден";
+} else {
+  tg.ready();
+
+  const user = tg.initDataUnsafe?.user;
+
+  document.getElementById("out").innerHTML = `
+    <b>Telegram ID:</b> ${user?.id ?? "нет"}<br>
+    <b>Имя:</b> ${user?.first_name ?? "нет"}<br>
+    <b>Username:</b> ${user?.username ?? "нет"}
+  `;
+}
+</script>
 
 <script src="/app.js"></script>
 
+</body>
 </html>
