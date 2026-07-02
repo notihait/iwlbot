@@ -1,5 +1,6 @@
 require "sinatra"
 require "sinatra/base"
+require "dotenv/load"
 
 require_relative "./app/controllers/api/auth_controller"
 require_relative "./app/controllers/wishlists_controller"
