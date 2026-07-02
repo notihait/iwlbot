@@ -9,6 +9,7 @@ set :host_authorization, {}
 
 use AuthController
 use WishlistsController
+use GiftsController
 
 set :bind, "0.0.0.0"
 set :port, 4567

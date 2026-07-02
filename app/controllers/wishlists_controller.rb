@@ -16,7 +16,6 @@ class WishlistsController < Sinatra::Base
     halt 400, { ok: false, error: "title required" }.to_json if title.to_s.strip.empty?
     halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
 
-    # 💥 FIX: empty string -> NULL
     event_date = nil if event_date.to_s.strip.empty?
 
     result = DB.conn.exec_params(
