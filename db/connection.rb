@@ -1,12 +1,9 @@
-require "pg"
+require "active_record"
 
-class DB
-  def self.conn
-    @conn ||= PG.connect(
-      dbname: ENV["PG_DB"],
-      user: ENV["PG_USER"],
-      password: ENV["PG_PASSWORD"],
-      host: ENV["PG_HOST"] || "localhost"
-    )
-  end
-end
+ActiveRecord::Base.establish_connection(
+  adapter: "postgresql",
+  database: ENV["PG_DB"],
+  username: ENV["PG_USER"],
+  password: ENV["PG_PASSWORD"],
+  host: ENV["PG_HOST"] || "localhost"
+)

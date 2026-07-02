@@ -4,6 +4,7 @@ require "dotenv/load"
 
 require_relative "./app/controllers/api/auth_controller"
 require_relative "./app/controllers/wishlists_controller"
+require_relative "./app/controllers/gifts_controller"
 
 set :host_authorization, {}
 
