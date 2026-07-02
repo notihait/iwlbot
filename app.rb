@@ -13,7 +13,7 @@ require_relative "./app/controllers/wishlists_controller"
 require_relative "./app/controllers/gifts_controller"
 
 class App < Sinatra::Base
-  set :host_authorization, {}
+    disable :protection
 
   set :bind, "0.0.0.0"
   set :port, 4567
