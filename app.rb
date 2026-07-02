@@ -4,20 +4,13 @@ require "active_record"
 
 require_relative "./db/connection"
 
-# модели (1 раз)
 Dir["./app/models/*.rb"].each { |file| require file }
 
-# контроллеры
 require_relative "./app/controllers/api/auth_controller"
 require_relative "./app/controllers/wishlists_controller"
 require_relative "./app/controllers/gifts_controller"
 
 class App < Sinatra::Base
-    use Rack::Lint
-
-    use Rack::Builder.new {
-      run ->(env) { [200, {}, ["ok"]] }
-    }
 
   set :bind, "0.0.0.0"
   set :port, 4567
@@ -30,4 +23,5 @@ class App < Sinatra::Base
   get "/" do
     send_file File.join(settings.public_folder, "index.html")
   end
+
 end
