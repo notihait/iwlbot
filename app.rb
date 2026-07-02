@@ -2,6 +2,8 @@ ENV["RACK_ENV"] = "development"
 
 require "sinatra/base"
 
+ENV["SINATRA_ACTIVESUPPORT"] = "false"
+
 require "sinatra"
 require "dotenv/load"
 require "active_record"
