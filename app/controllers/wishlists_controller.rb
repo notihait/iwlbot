@@ -4,7 +4,7 @@ require_relative "../../db/connection"
 
 class WishlistsController < Sinatra::Base
 
-  set :protection, except: :host_authorization
+  set :host_authorization, permitted_hosts: ["iwishlist.ru", "www.iwishlist.ru"]
 
   post "/api/wishlists" do
     payload = JSON.parse(request.body.read)

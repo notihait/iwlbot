@@ -4,7 +4,7 @@ require_relative "../../services/telegram_auth_service"
 
 class AuthController < Sinatra::Base
 
-  set :protection, except: :host_authorization
+  set :host_authorization, permitted_hosts: ["iwishlist.ru", "www.iwishlist.ru"]
 
   post "/api/auth" do
     content_type :json
