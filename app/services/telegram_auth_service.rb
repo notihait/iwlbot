@@ -1,7 +1,5 @@
 require "json"
 require "rack/utils"
-require_relative "../../db/connection"
-require_relative "../models/user"
 
 class TelegramAuthService
   def self.call(init_data)
@@ -16,11 +14,7 @@ class TelegramAuthService
       raw_user
     end
 
-    user_data = begin
-      JSON.parse(decoded_user)
-    rescue JSON::ParserError
-      JSON.parse(raw_user)
-    end
+    user_data = JSON.parse(decoded_user) rescue JSON.parse(raw_user)
 
     telegram_id = user_data["id"]
     first_name  = user_data["first_name"]
@@ -28,7 +22,8 @@ class TelegramAuthService
 
     user = User.find_or_initialize_by(telegram_id: telegram_id)
     user.first_name = first_name
-    user.username = username
+    user.username   = username
+
     user.save!
 
     user.id

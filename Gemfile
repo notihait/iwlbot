@@ -5,6 +5,8 @@ gem "json"
 gem "dotenv"
 gem "sequel"
 gem "pg"
+gem "rackup"
+gem "puma"
 
 gem "telegram-bot-ruby"
 
