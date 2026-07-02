@@ -13,7 +13,11 @@ require_relative "./app/controllers/wishlists_controller"
 require_relative "./app/controllers/gifts_controller"
 
 class App < Sinatra::Base
-    disable :protection
+    use Rack::Lint
+
+    use Rack::Builder.new {
+      run ->(env) { [200, {}, ["ok"]] }
+    }
 
   set :bind, "0.0.0.0"
   set :port, 4567
