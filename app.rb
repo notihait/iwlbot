@@ -13,11 +13,8 @@ require_relative "./app/controllers/wishlists_controller"
 require_relative "./app/controllers/gifts_controller"
 
 class App < Sinatra::Base
+  set :host_authorization, {}
 
-    set :host_authorization, {
-    permitted_hosts: ["iwishlist.ru", "www.iwishlist.ru"]
-  }
-    
   set :bind, "0.0.0.0"
   set :port, 4567
   set :public_folder, File.join(__dir__, "public")
