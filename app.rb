@@ -12,4 +12,4 @@ set :bind, "0.0.0.0"
 set :port, 4567
 set :public_folder, File.join(__dir__, "public")
 
-set :host_authorization, permitted_hosts: []
+set :protection, except: :host_authorization
