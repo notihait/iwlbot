@@ -1,7 +1,9 @@
 require "sinatra"
 require "sinatra/base"
 require "dotenv/load"
+require "active_record"
 
+require_relative "./db/connection"
 require_relative "./app/controllers/api/auth_controller"
 require_relative "./app/controllers/wishlists_controller"
 require_relative "./app/controllers/gifts_controller"

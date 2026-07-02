@@ -1,6 +1,7 @@
 require "json"
 require "rack/utils"
 require_relative "../../db/connection"
+require_relative "../models/user"
 
 class TelegramAuthService
   def self.call(init_data)
@@ -9,7 +10,6 @@ class TelegramAuthService
     raw_user = params["user"]
     raise "no user in initData" if raw_user.to_s.strip.empty?
 
-    # 🔥 FIX: иногда приходит URL-encoded JSON
     decoded_user = begin
       URI.decode_www_form_component(raw_user)
     rescue
@@ -19,7 +19,6 @@ class TelegramAuthService
     user_data = begin
       JSON.parse(decoded_user)
     rescue JSON::ParserError
-      # fallback: иногда уже норм JSON
       JSON.parse(raw_user)
     end
 
@@ -27,15 +26,11 @@ class TelegramAuthService
     first_name  = user_data["first_name"]
     username    = user_data["username"]
 
-    result = DB.conn.exec_params(<<~SQL, [telegram_id, first_name, username])
-      INSERT INTO users (telegram_id, first_name, username)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (telegram_id)
-      DO UPDATE SET first_name = EXCLUDED.first_name,
-                    username = EXCLUDED.username
-      RETURNING id
-    SQL
+    user = User.find_or_initialize_by(telegram_id: telegram_id)
+    user.first_name = first_name
+    user.username = username
+    user.save!
 
-    result[0]["id"]
+    user.id
   end
 end
