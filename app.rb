@@ -5,7 +5,7 @@ require "dotenv/load"
 require_relative "./app/controllers/api/auth_controller"
 require_relative "./app/controllers/wishlists_controller"
 
-set :protection, except: :host_authorization
+set :host_authorization, {}
 
 use AuthController
 use WishlistsController
