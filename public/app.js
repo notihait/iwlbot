@@ -229,6 +229,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       const toggleBtn = div.querySelector(".toggle-gifts");
       const shareBtn = div.querySelector(".share-wishlist");
+      const deleteBtn = div.querySelector(".delete-wishlist");
       const giftsContainer = div.querySelector(".gifts-container");
       const giftsList = div.querySelector(".gifts-list");
 
@@ -243,34 +244,34 @@ window.addEventListener("DOMContentLoaded", async () => {
       shareBtn.onclick = async () => {
         const wishlistId = shareBtn.dataset.wishlistId;
         const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${wishlistId}`;
-        const deleteBtn = div.querySelector(".delete-wishlist");
-
-          deleteBtn.onclick = async () => {
-            const wishlistId = deleteBtn.dataset.wishlistId;
-          
-            if (!confirm("Удалить вишлист?")) return;
-          
-            try {
-              const res = await fetch(`/api/wishlists/${wishlistId}`, {
-                method: "DELETE"
-              });
-            
-              const data = await res.json().catch(() => ({}));
-            
-              if (res.ok && data.ok !== false) {
-                div.remove();
-              } else {
-                alert("❌ Ошибка удаления");
-              }
-            } catch (e) {
-              alert("❌ Сетевая ошибка");
-            }
-          };
+        
         try {
           await navigator.clipboard.writeText(url);
           alert("Ссылка скопирована:\n" + url);
         } catch (e) {
           prompt("Скопируй ссылку вручную:", url);
+        }
+      };
+
+      deleteBtn.onclick = async () => {
+        const wishlistId = deleteBtn.dataset.wishlistId;
+      
+        if (!confirm("Удалить вишлист?")) return;
+      
+        try {
+          const res = await fetch(`/api/wishlists/${wishlistId}`, {
+            method: "DELETE"
+          });
+      
+          const data = await res.json().catch(() => ({}));
+      
+          if (res.ok && data.ok !== false) {
+            div.remove();
+          } else {
+            alert("❌ Ошибка удаления");
+          }
+        } catch (e) {
+          alert("❌ Сетевая ошибка");
         }
       };
 
