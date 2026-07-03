@@ -28,9 +28,6 @@ class WishlistsController < Sinatra::Base
     { ok: true, id: wishlist.id }.to_json
   end
 
-  # =========================
-  # LIST WISHLISTS
-  # =========================
   get "/api/wishlists" do
     content_type :json
 
@@ -57,10 +54,9 @@ class WishlistsController < Sinatra::Base
       event_date: wishlist.event_date,
       owner_name: wishlist.user&.first_name
     }.to_json
-  end
 
-  # =========================
-  # DELETE WISHLIST (NEW)
+      # =========================
+  # DELETE WISHLIST
   # =========================
   delete "/api/wishlists/:id" do
     content_type :json
@@ -71,5 +67,6 @@ class WishlistsController < Sinatra::Base
     wishlist.destroy
 
     { ok: true }.to_json
+  end
   end
 end
