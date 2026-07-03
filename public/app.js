@@ -13,6 +13,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   tg.ready();
 
   const user = tg.initDataUnsafe?.user;
+  const startParam = tg.initDataUnsafe?.start_param; // 🔥 ВАЖНО
 
   if (!user) {
     console.error("No Telegram user");
@@ -46,7 +47,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     <div id="list">Загрузка...</div>
   `;
 
-  // 🔥 AUTH
+  // =========================
+  // AUTH
+  // =========================
   async function auth() {
     const res = await fetch("/api/auth", {
       method: "POST",
@@ -63,23 +66,18 @@ window.addEventListener("DOMContentLoaded", async () => {
       data = JSON.parse(text);
     } catch (e) {
       console.error("NON-JSON RESPONSE:", text);
-      throw new Error("Server returned non-JSON (check backend logs)");
+      throw new Error("Server returned non-JSON");
     }
 
-    console.log("AUTH RESPONSE:", data);
-
-    if (!data.ok) {
-      throw new Error(data.error || "Auth failed");
-    }
-
-    if (!data.user_id) {
-      throw new Error("No user_id from backend");
-    }
+    if (!data.ok) throw new Error(data.error || "Auth failed");
+    if (!data.user_id) throw new Error("No user_id");
 
     userId = data.user_id;
   }
 
-  // 🔥 LOAD GIFTS для конкретного вишлиста
+  // =========================
+  // LOAD GIFTS
+  // =========================
   async function loadGifts(wishlistId, container) {
     container.innerHTML = "Загрузка подарков...";
 
@@ -132,8 +130,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 🔥 LOAD LIST вишлистов
-  async function loadWishlists() {
+  // =========================
+  // LOAD WISHLISTS
+  // =========================
+  async function loadWishlists(openWishlistId = null) {
     if (!userId) return;
 
     const res = await fetch(`/api/wishlists?user_id=${userId}`);
@@ -193,6 +193,11 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
       };
 
+      // 🔥 AUTO OPEN FROM /start
+      if (openWishlistId && String(openWishlistId) === String(w.id)) {
+        toggleBtn.click();
+      }
+
       const addGiftBtn = div.querySelector(".add-gift");
       const giftStatus = div.querySelector(".gift-status");
 
@@ -224,13 +229,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
           if (data.ok) {
             giftStatus.innerText = "✅ Добавлено";
-            div.querySelector(".gift-name").value = "";
-            div.querySelector(".gift-link").value = "";
-            div.querySelector(".gift-pic").value = "";
-            div.querySelector(".gift-price").value = "";
             await loadGifts(w.id, giftsList);
           } else {
-            giftStatus.innerText = "❌ Ошибка: " + (data.error || "");
+            giftStatus.innerText = "❌ Ошибка";
           }
         } catch (err) {
           console.error(err);
@@ -240,7 +241,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 🔥 CREATE вишлист
+  // =========================
+  // CREATE WISHLIST
+  // =========================
   document.getElementById("create").onclick = async () => {
 
     if (!userId) {
@@ -282,10 +285,19 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // 🔥 INIT
+  // =========================
+  // INIT
+  // =========================
   try {
     await auth();
-    await loadWishlists();
+
+    const openWishlistId =
+      startParam?.startsWith("wishlist_")
+        ? startParam.split("_")[1]
+        : null;
+
+    await loadWishlists(openWishlistId);
+
   } catch (e) {
     console.error("INIT ERROR:", e);
     document.getElementById("app").innerHTML =
