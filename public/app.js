@@ -185,27 +185,18 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     const res = await fetch(`/api/wishlists?user_id=${userId}`);
-    console.log("loadWishlists: response status", res.status);
-
     const data = await res.json();
-    console.log("loadWishlists: data =", data);
-    console.log("loadWishlists: isArray =", Array.isArray(data), "length =", data?.length);
 
     const list = document.getElementById("list");
-    console.log("loadWishlists: list element =", list);
 
     if (!Array.isArray(data) || data.length === 0) {
-      console.log("loadWishlists: пусто или не массив");
       list.innerHTML = "<p>Пока пусто</p>";
       return;
     }
 
-    console.log("loadWishlists: рендерим", data.length, "вишлистов");
     list.innerHTML = "";
 
-    data.forEach((w, i) => {
-      console.log(`loadWishlists: рендер карточки ${i}`, w);
-
+    data.forEach((w) => {
       const div = document.createElement("div");
       div.style.padding = "10px";
       div.style.border = "1px solid #ccc";
@@ -234,14 +225,11 @@ window.addEventListener("DOMContentLoaded", async () => {
       `;
 
       list.appendChild(div);
-      console.log(`loadWishlists: карточка ${i} добавлена в DOM`);
 
       const toggleBtn = div.querySelector(".toggle-gifts");
       const shareBtn = div.querySelector(".share-wishlist");
       const giftsContainer = div.querySelector(".gifts-container");
       const giftsList = div.querySelector(".gifts-list");
-
-      console.log(`loadWishlists: shareBtn для ${w.id} =`, shareBtn);
 
       toggleBtn.onclick = async () => {
         const isHidden = giftsContainer.style.display === "none";
@@ -254,7 +242,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       shareBtn.onclick = async () => {
         const wishlistId = shareBtn.dataset.wishlistId;
         const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${wishlistId}`;
-        console.log("SHARE URL:", url);
+
         try {
           await navigator.clipboard.writeText(url);
           alert("Ссылка скопирована:\n" + url);
@@ -299,13 +287,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             giftStatus.innerText = "❌ Ошибка";
           }
         } catch (err) {
-          console.error(err);
           giftStatus.innerText = "❌ Сетевая ошибка";
         }
       };
     });
-
-    console.log("loadWishlists: DONE");
   }
 
   // =========================
@@ -345,7 +330,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("status").innerText = "❌ Ошибка";
       }
     } catch (err) {
-      console.error(err);
       document.getElementById("status").innerText = "❌ Сетевая ошибка";
     }
   };
+
+  // ВАЖНО: сначала авторизация, потом загрузка
+  await auth();
+  await loadWishlists();
+
+}); // ← закрытие DOMContentLoaded
