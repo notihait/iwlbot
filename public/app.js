@@ -208,6 +208,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         <br><br>
         <button class="toggle-gifts" data-wishlist-id="${w.id}">🎁 Подарки</button>
         <button class="share-wishlist" data-wishlist-id="${w.id}">🔗 Поделиться</button>
+        <button class="delete-wishlist" data-wishlist-id="${w.id}">🗑 Удалить</button>
         <div class="gifts-container" style="display:none; margin-top:10px;">
           <div class="gifts-list"></div>
           <hr>
@@ -242,7 +243,29 @@ window.addEventListener("DOMContentLoaded", async () => {
       shareBtn.onclick = async () => {
         const wishlistId = shareBtn.dataset.wishlistId;
         const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${wishlistId}`;
+        const deleteBtn = div.querySelector(".delete-wishlist");
 
+          deleteBtn.onclick = async () => {
+            const wishlistId = deleteBtn.dataset.wishlistId;
+          
+            if (!confirm("Удалить вишлист?")) return;
+          
+            try {
+              const res = await fetch(`/api/wishlists/${wishlistId}`, {
+                method: "DELETE"
+              });
+            
+              const data = await res.json().catch(() => ({}));
+            
+              if (res.ok && data.ok !== false) {
+                div.remove();
+              } else {
+                alert("❌ Ошибка удаления");
+              }
+            } catch (e) {
+              alert("❌ Сетевая ошибка");
+            }
+          };
         try {
           await navigator.clipboard.writeText(url);
           alert("Ссылка скопирована:\n" + url);
