@@ -1,6 +1,8 @@
 console.log("APP START");
 console.log("VERSION 2026-07-02-GIFTS");
 
+const BOT_USERNAME = "IWIshList_bot"; // 👈 ВПИШИ СЮДА ЮЗЕРНЕЙМ БОТА БЕЗ @
+
 window.addEventListener("DOMContentLoaded", async () => {
 
   const tg = window.Telegram?.WebApp;
@@ -13,7 +15,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   tg.ready();
 
   const user = tg.initDataUnsafe?.user;
-  const startParam = tg.initDataUnsafe?.start_param; // 🔥 ВАЖНО
+  const startParam = tg.initDataUnsafe?.start_param;
 
   if (!user) {
     console.error("No Telegram user");
@@ -158,7 +160,9 @@ window.addEventListener("DOMContentLoaded", async () => {
         <b>${w.title}</b><br>
         📅 ${w.event_date || "без даты"}
         <br><br>
+
         <button class="toggle-gifts" data-wishlist-id="${w.id}">🎁 Подарки</button>
+        <button class="share-wishlist" data-wishlist-id="${w.id}">🔗 Поделиться</button>
 
         <div class="gifts-container" style="display:none; margin-top:10px;">
           <div class="gifts-list"></div>
@@ -181,6 +185,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       list.appendChild(div);
 
       const toggleBtn = div.querySelector(".toggle-gifts");
+      const shareBtn = div.querySelector(".share-wishlist");
       const giftsContainer = div.querySelector(".gifts-container");
       const giftsList = div.querySelector(".gifts-list");
 
@@ -193,7 +198,21 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
       };
 
-      // 🔥 AUTO OPEN FROM /start
+      // 🔥 SHARE BUTTON
+      shareBtn.onclick = async () => {
+        const wishlistId = shareBtn.dataset.wishlistId;
+
+        const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${wishlistId}`;
+
+        try {
+          await navigator.clipboard.writeText(url);
+          alert("Ссылка скопирована:\n" + url);
+        } catch (e) {
+          prompt("Скопируй ссылку вручную:", url);
+        }
+      };
+
+      // AUTO OPEN
       if (openWishlistId && String(openWishlistId) === String(w.id)) {
         toggleBtn.click();
       }
