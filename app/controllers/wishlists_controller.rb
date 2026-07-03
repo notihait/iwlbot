@@ -28,6 +28,9 @@ class WishlistsController < Sinatra::Base
     { ok: true, id: wishlist.id }.to_json
   end
 
+  # =========================
+  # LIST WISHLISTS
+  # =========================
   get "/api/wishlists" do
     content_type :json
 
@@ -54,5 +57,19 @@ class WishlistsController < Sinatra::Base
       event_date: wishlist.event_date,
       owner_name: wishlist.user&.first_name
     }.to_json
+  end
+
+  # =========================
+  # DELETE WISHLIST (NEW)
+  # =========================
+  delete "/api/wishlists/:id" do
+    content_type :json
+
+    wishlist = Wishlist.find_by(id: params[:id])
+    halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
+
+    wishlist.destroy
+
+    { ok: true }.to_json
   end
 end
