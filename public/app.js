@@ -1,7 +1,7 @@
 console.log("APP START");
-console.log("VERSION 2026-07-03-SHARE");
+console.log("VERSION 2026-07-03-DEBUG");
 
-const BOT_USERNAME = "IWIshList_bot"; // 👈 ВПИШИ СЮДА ЮЗЕРНЕЙМ БОТА БЕЗ @
+const BOT_USERNAME = "IWIshList_bot";
 
 window.addEventListener("DOMContentLoaded", async () => {
 
@@ -16,6 +16,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const user = tg.initDataUnsafe?.user;
   const startParam = tg.initDataUnsafe?.start_param;
+
+  console.log("USER:", user);
+  console.log("START PARAM:", startParam);
 
   if (!user) {
     console.error("No Telegram user");
@@ -32,19 +35,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("app").innerHTML = `
     <h2>🎁 Вишлисты</h2>
-
     <input id="title" placeholder="Название">
     <br><br>
-
     <input id="date" type="date">
     <br><br>
-
     <button id="create">Создать</button>
-
     <p id="status"></p>
-
     <hr>
-
     <h3>Список</h3>
     <div id="list">Загрузка...</div>
   `;
@@ -53,15 +50,15 @@ window.addEventListener("DOMContentLoaded", async () => {
   // AUTH
   // =========================
   async function auth() {
+    console.log("AUTH: start");
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        initData: tg.initData
-      })
+      body: JSON.stringify({ initData: tg.initData })
     });
 
     const text = await res.text();
+    console.log("AUTH RAW RESPONSE:", text);
 
     let data;
     try {
@@ -71,15 +68,17 @@ window.addEventListener("DOMContentLoaded", async () => {
       throw new Error("Server returned non-JSON");
     }
 
+    console.log("AUTH PARSED:", data);
+
     if (!data.ok) throw new Error(data.error || "Auth failed");
     if (!data.user_id) throw new Error("No user_id");
 
     userId = data.user_id;
+    console.log("AUTH OK, userId:", userId);
   }
 
   // =========================
   // LOAD GIFTS
-  // readOnly=true скрывает кнопку удаления (для чужого шаренного вишлиста)
   // =========================
   async function loadGifts(wishlistId, container, readOnly = false) {
     container.innerHTML = "Загрузка подарков...";
@@ -140,9 +139,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =========================
-  // SHOW SHARED WISHLIST (чужой, по startapp=wishlist_ID)
+  // SHOW SHARED WISHLIST
   // =========================
   async function showSharedWishlist(wishlistId) {
+    console.log("showSharedWishlist:", wishlistId);
     const app = document.getElementById("app");
 
     const block = document.createElement("div");
@@ -174,24 +174,38 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =========================
-  // LOAD WISHLISTS (свои собственные)
+  // LOAD WISHLISTS
   // =========================
   async function loadWishlists() {
-    if (!userId) return;
+    console.log("loadWishlists: start, userId =", userId);
+
+    if (!userId) {
+      console.log("loadWishlists: NO userId, abort");
+      return;
+    }
 
     const res = await fetch(`/api/wishlists?user_id=${userId}`);
+    console.log("loadWishlists: response status", res.status);
+
     const data = await res.json();
+    console.log("loadWishlists: data =", data);
+    console.log("loadWishlists: isArray =", Array.isArray(data), "length =", data?.length);
 
     const list = document.getElementById("list");
+    console.log("loadWishlists: list element =", list);
 
     if (!Array.isArray(data) || data.length === 0) {
+      console.log("loadWishlists: пусто или не массив");
       list.innerHTML = "<p>Пока пусто</p>";
       return;
     }
 
+    console.log("loadWishlists: рендерим", data.length, "вишлистов");
     list.innerHTML = "";
 
-    data.forEach(w => {
+    data.forEach((w, i) => {
+      console.log(`loadWishlists: рендер карточки ${i}`, w);
+
       const div = document.createElement("div");
       div.style.padding = "10px";
       div.style.border = "1px solid #ccc";
@@ -201,15 +215,11 @@ window.addEventListener("DOMContentLoaded", async () => {
         <b>${w.title}</b><br>
         📅 ${w.event_date || "без даты"}
         <br><br>
-
         <button class="toggle-gifts" data-wishlist-id="${w.id}">🎁 Подарки</button>
         <button class="share-wishlist" data-wishlist-id="${w.id}">🔗 Поделиться</button>
-
         <div class="gifts-container" style="display:none; margin-top:10px;">
           <div class="gifts-list"></div>
-
           <hr>
-
           <input class="gift-name" placeholder="Название подарка">
           <br><br>
           <input class="gift-link" placeholder="Ссылка (необязательно)">
@@ -224,26 +234,27 @@ window.addEventListener("DOMContentLoaded", async () => {
       `;
 
       list.appendChild(div);
+      console.log(`loadWishlists: карточка ${i} добавлена в DOM`);
 
       const toggleBtn = div.querySelector(".toggle-gifts");
       const shareBtn = div.querySelector(".share-wishlist");
       const giftsContainer = div.querySelector(".gifts-container");
       const giftsList = div.querySelector(".gifts-list");
 
+      console.log(`loadWishlists: shareBtn для ${w.id} =`, shareBtn);
+
       toggleBtn.onclick = async () => {
         const isHidden = giftsContainer.style.display === "none";
         giftsContainer.style.display = isHidden ? "block" : "none";
-
         if (isHidden) {
           await loadGifts(w.id, giftsList);
         }
       };
 
-      // 🔥 SHARE BUTTON
       shareBtn.onclick = async () => {
         const wishlistId = shareBtn.dataset.wishlistId;
         const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${wishlistId}`;
-
+        console.log("SHARE URL:", url);
         try {
           await navigator.clipboard.writeText(url);
           alert("Ссылка скопирована:\n" + url);
@@ -293,13 +304,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
       };
     });
+
+    console.log("loadWishlists: DONE");
   }
 
   // =========================
   // CREATE WISHLIST
   // =========================
   document.getElementById("create").onclick = async () => {
-
     if (!userId) {
       document.getElementById("status").innerText = "❌ Нет авторизации";
       return;
@@ -332,7 +344,6 @@ window.addEventListener("DOMContentLoaded", async () => {
       } else {
         document.getElementById("status").innerText = "❌ Ошибка";
       }
-
     } catch (err) {
       console.error(err);
       document.getElementById("status").innerText = "❌ Сетевая ошибка";
@@ -342,6 +353,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   // =========================
   // INIT
   // =========================
+  console.log("INIT: start");
   try {
     await auth();
 
@@ -349,6 +361,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       startParam?.startsWith("wishlist_")
         ? startParam.split("_")[1]
         : null;
+
+    console.log("INIT: openWishlistId =", openWishlistId);
 
     if (openWishlistId) {
       await showSharedWishlist(openWishlistId);
@@ -362,4 +376,5 @@ window.addEventListener("DOMContentLoaded", async () => {
       `<h2>Ошибка авторизации</h2><pre>${e.message}</pre>`;
   }
 
+  console.log("INIT: complete");
 });
