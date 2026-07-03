@@ -1,5 +1,5 @@
 console.log("APP START");
-console.log("VERSION 2026-07-02-GIFTS");
+console.log("VERSION 2026-07-03-SHARE");
 
 const BOT_USERNAME = "IWIshList_bot"; // 👈 ВПИШИ СЮДА ЮЗЕРНЕЙМ БОТА БЕЗ @
 
@@ -79,8 +79,9 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   // =========================
   // LOAD GIFTS
+  // readOnly=true скрывает кнопку удаления (для чужого шаренного вишлиста)
   // =========================
-  async function loadGifts(wishlistId, container) {
+  async function loadGifts(wishlistId, container, readOnly = false) {
     container.innerHTML = "Загрузка подарков...";
 
     const res = await fetch(`/api/gifts?wishlist_id=${wishlistId}`);
@@ -110,6 +111,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         ? `<a href="${g.link}" target="_blank">ссылка</a>`
         : "";
 
+      const deleteBtn = readOnly
+        ? ""
+        : `<button data-gift-id="${g.id}" class="delete-gift">✖</button>`;
+
       giftDiv.innerHTML = `
         ${img}
         <div style="flex:1;">
@@ -117,25 +122,61 @@ window.addEventListener("DOMContentLoaded", async () => {
           ${g.price ? `💰 ${g.price}<br>` : ""}
           ${linkHtml}
         </div>
-        <button data-gift-id="${g.id}" class="delete-gift">✖</button>
+        ${deleteBtn}
       `;
 
       container.appendChild(giftDiv);
     });
 
-    container.querySelectorAll(".delete-gift").forEach(btn => {
-      btn.onclick = async () => {
-        const giftId = btn.dataset.giftId;
-        await fetch(`/api/gifts/${giftId}`, { method: "DELETE" });
-        await loadGifts(wishlistId, container);
-      };
-    });
+    if (!readOnly) {
+      container.querySelectorAll(".delete-gift").forEach(btn => {
+        btn.onclick = async () => {
+          const giftId = btn.dataset.giftId;
+          await fetch(`/api/gifts/${giftId}`, { method: "DELETE" });
+          await loadGifts(wishlistId, container);
+        };
+      });
+    }
   }
 
   // =========================
-  // LOAD WISHLISTS
+  // SHOW SHARED WISHLIST (чужой, по startapp=wishlist_ID)
   // =========================
-  async function loadWishlists(openWishlistId = null) {
+  async function showSharedWishlist(wishlistId) {
+    const app = document.getElementById("app");
+
+    const block = document.createElement("div");
+    block.id = "shared-wishlist";
+    block.style.border = "2px solid #4caf50";
+    block.style.borderRadius = "6px";
+    block.style.padding = "12px";
+    block.style.marginBottom = "16px";
+    block.innerHTML = "Загрузка вишлиста...";
+    app.prepend(block);
+
+    try {
+      const res = await fetch(`/api/wishlists/${wishlistId}`);
+      if (!res.ok) throw new Error("not found");
+      const w = await res.json();
+
+      block.innerHTML = `
+        <h3>🎁 Вишлист от ${w.owner_name || "друга"}</h3>
+        <b>${w.title}</b><br>
+        📅 ${w.event_date || "без даты"}
+        <div class="shared-gifts" style="margin-top:10px;"></div>
+      `;
+
+      await loadGifts(w.id, block.querySelector(".shared-gifts"), true);
+    } catch (e) {
+      console.error("SHARED WISHLIST ERROR:", e);
+      block.innerHTML = "<p>Не удалось загрузить вишлист по ссылке 😕</p>";
+    }
+  }
+
+  // =========================
+  // LOAD WISHLISTS (свои собственные)
+  // =========================
+  async function loadWishlists() {
     if (!userId) return;
 
     const res = await fetch(`/api/wishlists?user_id=${userId}`);
@@ -201,7 +242,6 @@ window.addEventListener("DOMContentLoaded", async () => {
       // 🔥 SHARE BUTTON
       shareBtn.onclick = async () => {
         const wishlistId = shareBtn.dataset.wishlistId;
-
         const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${wishlistId}`;
 
         try {
@@ -211,11 +251,6 @@ window.addEventListener("DOMContentLoaded", async () => {
           prompt("Скопируй ссылку вручную:", url);
         }
       };
-
-      // AUTO OPEN
-      if (openWishlistId && String(openWishlistId) === String(w.id)) {
-        toggleBtn.click();
-      }
 
       const addGiftBtn = div.querySelector(".add-gift");
       const giftStatus = div.querySelector(".gift-status");
@@ -315,7 +350,11 @@ window.addEventListener("DOMContentLoaded", async () => {
         ? startParam.split("_")[1]
         : null;
 
-    await loadWishlists(openWishlistId);
+    if (openWishlistId) {
+      await showSharedWishlist(openWishlistId);
+    }
+
+    await loadWishlists();
 
   } catch (e) {
     console.error("INIT ERROR:", e);
