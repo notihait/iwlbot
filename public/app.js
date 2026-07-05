@@ -1,7 +1,49 @@
 console.log("APP START");
-console.log("VERSION 2026-07-03-DEBUG");
+console.log("VERSION 2026-07-05-VALIDATION");
 
 const BOT_USERNAME = "IWIshList_bot";
+
+// =========================
+// ВАЛИДАЦИЯ (общие хелперы)
+// =========================
+
+// Цена: только число, опционально с копейками (до 2 знаков после точки)
+function isValidPrice(value) {
+  if (value === "" || value === null || value === undefined) return true; // необязательное поле
+  return /^\d+([.,]\d{1,2})?$/.test(value.trim());
+}
+
+// Ссылка: должна быть http(s) и распознаваться как URL
+function isValidUrl(value) {
+  if (value === "" || value === null || value === undefined) return true; // необязательное поле
+  try {
+    const u = new URL(value.trim());
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+// Название: не пустое, разумная длина
+function isValidName(value) {
+  const v = value.trim();
+  return v.length > 0 && v.length <= 200;
+}
+
+// Дата: не в прошлом (для события) — мягкая проверка, не блокирует, только формат
+function isValidDate(value) {
+  if (!value) return true;
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+// Перевод ISO-даты (YYYY-MM-DD) в формат ДД.ММ.ГГГГ для отображения
+function formatDateRu(isoDate) {
+  if (!isoDate) return "без даты";
+  const parts = isoDate.split("-");
+  if (parts.length !== 3) return isoDate;
+  const [y, m, d] = parts;
+  return `${d}.${m}.${y}`;
+}
 
 window.addEventListener("DOMContentLoaded", async () => {
 
@@ -162,7 +204,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       block.innerHTML = `
         <h3>🎁 Вишлист от ${w.owner_name || "друга"}</h3>
         <b>${w.title}</b><br>
-        📅 ${w.event_date || "без даты"}
+        📅 ${formatDateRu(w.event_date)}
         <div class="shared-gifts" style="margin-top:10px;"></div>
       `;
 
@@ -204,7 +246,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       div.innerHTML = `
         <b>${w.title}</b><br>
-        📅 ${w.event_date || "без даты"}
+        📅 ${formatDateRu(w.event_date)}
         <br><br>
         <button class="toggle-gifts" data-wishlist-id="${w.id}">🎁 Подарки</button>
         <button class="share-wishlist" data-wishlist-id="${w.id}">🔗 Поделиться</button>
@@ -218,7 +260,7 @@ window.addEventListener("DOMContentLoaded", async () => {
           <br><br>
           <input class="gift-pic" placeholder="URL картинки (необязательно)">
           <br><br>
-          <input class="gift-price" placeholder="Цена (необязательно)" type="number">
+          <input class="gift-price" placeholder="Цена (необязательно)" type="text" inputmode="decimal">
           <br><br>
           <button class="add-gift" data-wishlist-id="${w.id}">Добавить подарок</button>
           <p class="gift-status"></p>
@@ -244,7 +286,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       shareBtn.onclick = async () => {
         const wishlistId = shareBtn.dataset.wishlistId;
         const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${wishlistId}`;
-        
+
         try {
           await navigator.clipboard.writeText(url);
           alert("Ссылка скопирована:\n" + url);
@@ -255,16 +297,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       deleteBtn.onclick = async () => {
         const wishlistId = deleteBtn.dataset.wishlistId;
-      
+
         if (!confirm("Удалить вишлист?")) return;
-      
+
         try {
           const res = await fetch(`/api/wishlists/${wishlistId}`, {
             method: "DELETE"
           });
-      
+
           const data = await res.json().catch(() => ({}));
-      
+
           if (res.ok && data.ok !== false) {
             div.remove();
           } else {
@@ -284,10 +326,25 @@ window.addEventListener("DOMContentLoaded", async () => {
         const pic = div.querySelector(".gift-pic").value.trim();
         const price = div.querySelector(".gift-price").value.trim();
 
-        if (!name) {
-          giftStatus.innerText = "❌ Введите название подарка";
+        // === ВАЛИДАЦИЯ ПЕРЕД ОТПРАВКОЙ ===
+        if (!isValidName(name)) {
+          giftStatus.innerText = "❌ Введите название подарка (до 200 символов)";
           return;
         }
+        if (!isValidPrice(price)) {
+          giftStatus.innerText = "❌ Цена должна быть числом, например 1500 или 1500.50";
+          return;
+        }
+        if (!isValidUrl(link)) {
+          giftStatus.innerText = "❌ Ссылка должна начинаться с http:// или https://";
+          return;
+        }
+        if (!isValidUrl(pic)) {
+          giftStatus.innerText = "❌ Ссылка на картинку должна начинаться с http:// или https://";
+          return;
+        }
+
+        giftStatus.innerText = "";
 
         try {
           const res = await fetch("/api/gifts", {
@@ -298,7 +355,7 @@ window.addEventListener("DOMContentLoaded", async () => {
               name,
               link: link || null,
               pic: pic || null,
-              price: price || null
+              price: price ? price.replace(",", ".") : null
             })
           });
 
@@ -306,9 +363,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
           if (data.ok) {
             giftStatus.innerText = "✅ Добавлено";
+            div.querySelector(".gift-name").value = "";
+            div.querySelector(".gift-link").value = "";
+            div.querySelector(".gift-pic").value = "";
+            div.querySelector(".gift-price").value = "";
             await loadGifts(w.id, giftsList);
           } else {
-            giftStatus.innerText = "❌ Ошибка";
+            giftStatus.innerText = "❌ " + (data.error || "Ошибка");
           }
         } catch (err) {
           giftStatus.innerText = "❌ Сетевая ошибка";
@@ -329,10 +390,17 @@ window.addEventListener("DOMContentLoaded", async () => {
     const title = document.getElementById("title").value.trim();
     const date = document.getElementById("date").value;
 
-    if (!title) {
-      document.getElementById("status").innerText = "❌ Введите название";
+    // === ВАЛИДАЦИЯ ПЕРЕД ОТПРАВКОЙ ===
+    if (!isValidName(title)) {
+      document.getElementById("status").innerText = "❌ Введите название (до 200 символов)";
       return;
     }
+    if (!isValidDate(date)) {
+      document.getElementById("status").innerText = "❌ Некорректная дата";
+      return;
+    }
+
+    document.getElementById("status").innerText = "";
 
     try {
       const res = await fetch("/api/wishlists", {
@@ -349,9 +417,11 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       if (data.ok) {
         document.getElementById("status").innerText = "✅ Создано";
+        document.getElementById("title").value = "";
+        document.getElementById("date").value = "";
         await loadWishlists();
       } else {
-        document.getElementById("status").innerText = "❌ Ошибка";
+        document.getElementById("status").innerText = "❌ " + (data.error || "Ошибка");
       }
     } catch (err) {
       document.getElementById("status").innerText = "❌ Сетевая ошибка";
@@ -361,5 +431,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   // ВАЖНО: сначала авторизация, потом загрузка
   await auth();
   await loadWishlists();
+
+  // Если открыли по диплинку с конкретным вишлистом — показать его отдельным блоком сверху
+  if (startParam && startParam.startsWith("wishlist_")) {
+    const sharedId = startParam.replace("wishlist_", "");
+    await showSharedWishlist(sharedId);
+  }
 
 }); // ← закрытие DOMContentLoaded

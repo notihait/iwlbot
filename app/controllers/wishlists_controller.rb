@@ -1,38 +1,68 @@
 require "sinatra/base"
 require "json"
+require "date"
 
 class WishlistsController < Sinatra::Base
   set :host_authorization, {}
 
-  post "/api/wishlists" do
+  before do
     content_type :json
+  end
 
-    payload = JSON.parse(request.body.read)
+  # =========================
+  # CREATE WISHLIST
+  # =========================
+  post "/api/wishlists" do
+    payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
 
     user_id    = payload["user_id"]
     title      = payload["title"]
     event_date = payload["event_date"]
 
+    # user_id обязателен и должен быть числом
     halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
-    halt 400, { ok: false, error: "title required" }.to_json if title.to_s.strip.empty?
+    halt 400, { ok: false, error: "user_id must be a number" }.to_json unless user_id.to_s.match?(/\A\d+\z/)
 
-    user = User.find(user_id)
+    # title обязателен, не пустой и не слишком длинный
+    halt 400, { ok: false, error: "title required" }.to_json if title.to_s.strip.empty?
+    halt 400, { ok: false, error: "title too long (max 255)" }.to_json if title.to_s.length > 255
+
+    # event_date, если передан, должен быть валидной датой в формате YYYY-MM-DD
+    if event_date && !event_date.to_s.strip.empty?
+      begin
+        Date.iso8601(event_date)
+      rescue ArgumentError
+        halt 400, { ok: false, error: "invalid event_date format, expected YYYY-MM-DD" }.to_json
+      end
+    else
+      event_date = nil
+    end
+
+    # проверяем что юзер реально существует, вместо User.find (который кинет 500)
+    user = User.find_by(id: user_id)
+    halt 404, { ok: false, error: "user not found" }.to_json unless user
 
     wishlist = user.wishlists.new(
-      title: title,
+      title: title.to_s.strip,
       event_date: event_date
     )
 
-    wishlist.save!
-
-    { ok: true, id: wishlist.id }.to_json
+    if wishlist.save
+      status 201
+      { ok: true, id: wishlist.id }.to_json
+    else
+      halt 422, { ok: false, error: wishlist.errors.full_messages.join(", ") }.to_json
+    end
   end
 
+  # =========================
+  # GET WISHLISTS (LIST FOR USER)
+  # =========================
   get "/api/wishlists" do
-    content_type :json
-
     user_id = params["user_id"]
+
     halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
+    halt 400, { ok: false, error: "user_id must be a number" }.to_json unless user_id.to_s.match?(/\A\d+\z/)
 
     Wishlist.where(user_id: user_id)
             .order(created_at: :desc)
@@ -43,7 +73,7 @@ class WishlistsController < Sinatra::Base
   # PUBLIC: GET SINGLE WISHLIST (FOR SHARING)
   # =========================
   get "/api/wishlists/:id" do
-    content_type :json
+    halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
 
     wishlist = Wishlist.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
@@ -56,11 +86,11 @@ class WishlistsController < Sinatra::Base
     }.to_json
   end
 
-    # =========================
+  # =========================
   # DELETE WISHLIST
   # =========================
   delete "/api/wishlists/:id" do
-    content_type :json
+    halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
 
     wishlist = Wishlist.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
