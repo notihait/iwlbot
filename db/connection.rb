@@ -7,5 +7,3 @@ ActiveRecord::Base.establish_connection(
   password: ENV["PG_PASSWORD"],
   host: ENV["PG_HOST"] || "localhost"
 )
-
-ActiveRecord::Base.migration_paths = ["db/migrate"]
