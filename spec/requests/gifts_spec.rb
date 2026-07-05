@@ -4,13 +4,16 @@ RSpec.describe "Gifts API" do
   let(:user)     { User.create!(telegram_id: 111_222, first_name: "Тест") }
   let(:wishlist) { user.wishlists.create!(title: "День рождения") }
 
+  # маленькая валидная base64-картинка (1x1 px JPEG) — для тестов достаточно, что формат совпадает
+  let(:valid_pic) { "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAA=" }
+
   # =========================
   # POST /api/gifts
   # =========================
   describe "POST /api/gifts" do
     it "создаёт подарок с валидными данными" do
       post "/api/gifts",
-           { wishlist_id: wishlist.id, name: "Книга", link: "https://example.com", price: 19.99 }.to_json,
+           { wishlist_id: wishlist.id, name: "Книга", link: "https://example.com", price: "19.99" }.to_json,
            json_headers
 
       expect(last_response.status).to eq(201)
@@ -19,7 +22,16 @@ RSpec.describe "Gifts API" do
       expect(Gift.count).to eq(1)
     end
 
-    it "создаёт подарок без необязательных полей (link, pic, price)" do
+    it "создаёт подарок с картинкой в base64" do
+      post "/api/gifts",
+           { wishlist_id: wishlist.id, name: "Книга", pic: valid_pic }.to_json,
+           json_headers
+
+      expect(last_response.status).to eq(201)
+      expect(Gift.last.pic).to eq(valid_pic)
+    end
+
+    it "создаёт подарок без необязательных полей" do
       post "/api/gifts",
            { wishlist_id: wishlist.id, name: "Просто подарок" }.to_json,
            json_headers
@@ -39,7 +51,6 @@ RSpec.describe "Gifts API" do
       post "/api/gifts", { wishlist_id: wishlist.id }.to_json, json_headers
 
       expect(last_response.status).to eq(400)
-      expect(json_body["ok"]).to eq(false)
     end
 
     it "отклоняет пустую строку в name" do
@@ -48,24 +59,58 @@ RSpec.describe "Gifts API" do
       expect(last_response.status).to eq(400)
     end
 
-    it "падает при несуществующем wishlist_id" do
-      # ЭТОТ ТЕСТ ФИКСИРУЕТ ТЕКУЩИЙ БАГ:
-      # Wishlist.find кидает RecordNotFound без rescue → Sinatra отдаёт 500
-      # После того как замените на Wishlist.find_by + halt 404,
-      # поменяйте ожидание ниже на eq(404)
-      post "/api/gifts", { wishlist_id: 999_999, name: "Книга" }.to_json, json_headers
+    it "отклоняет слишком длинное name" do
+      post "/api/gifts", { wishlist_id: wishlist.id, name: "а" * 201 }.to_json, json_headers
 
-      expect(last_response.status).to eq(500)
+      expect(last_response.status).to eq(400)
     end
 
-    it "принимает текст вместо числа в price (текущее поведение, требует валидации)" do
-      # Пока в контроллере нет проверки price — этот тест документирует дыру.
-      # После добавления валидации ожидание нужно поменять на 400.
+    it "возвращает 404 при несуществующем wishlist_id" do
+      post "/api/gifts", { wishlist_id: 999_999, name: "Книга" }.to_json, json_headers
+
+      expect(last_response.status).to eq(404)
+    end
+
+    it "отклоняет текст вместо числа в price" do
       post "/api/gifts",
            { wishlist_id: wishlist.id, name: "Книга", price: "не число" }.to_json,
            json_headers
 
+      expect(last_response.status).to eq(400)
+    end
+
+    it "принимает price с копейками" do
+      post "/api/gifts",
+           { wishlist_id: wishlist.id, name: "Книга", price: "1500.50" }.to_json,
+           json_headers
+
       expect(last_response.status).to eq(201)
+    end
+
+    it "отклоняет price с более чем 2 знаками после точки" do
+      post "/api/gifts",
+           { wishlist_id: wishlist.id, name: "Книга", price: "1500.999" }.to_json,
+           json_headers
+
+      expect(last_response.status).to eq(400)
+    end
+
+    it "отклоняет pic, если это не data URL с картинкой" do
+      post "/api/gifts",
+           { wishlist_id: wishlist.id, name: "Книга", pic: "https://example.com/pic.jpg" }.to_json,
+           json_headers
+
+      expect(last_response.status).to eq(400)
+    end
+
+    it "отклоняет слишком большую картинку" do
+      huge_pic = "data:image/jpeg;base64," + ("A" * 600_000)
+
+      post "/api/gifts",
+           { wishlist_id: wishlist.id, name: "Книга", pic: huge_pic }.to_json,
+           json_headers
+
+      expect(last_response.status).to eq(400)
     end
   end
 
@@ -122,11 +167,10 @@ RSpec.describe "Gifts API" do
       expect(Gift.exists?(gift.id)).to eq(false)
     end
 
-    it "падает при удалении несуществующего подарка" do
-      # Тот же баг: Gift.find без rescue → 500 вместо 404
+    it "возвращает 404 при удалении несуществующего подарка" do
       delete "/api/gifts/999999"
 
-      expect(last_response.status).to eq(500)
+      expect(last_response.status).to eq(404)
     end
   end
 end

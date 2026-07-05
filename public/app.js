@@ -1,5 +1,5 @@
 console.log("APP START");
-console.log("VERSION 2026-07-05-VALIDATION");
+console.log("VERSION 2026-07-05-IMAGES");
 
 const BOT_USERNAME = "IWIshList_bot";
 
@@ -7,15 +7,13 @@ const BOT_USERNAME = "IWIshList_bot";
 // ВАЛИДАЦИЯ (общие хелперы)
 // =========================
 
-// Цена: только число, опционально с копейками (до 2 знаков после точки)
 function isValidPrice(value) {
-  if (value === "" || value === null || value === undefined) return true; // необязательное поле
+  if (value === "" || value === null || value === undefined) return true;
   return /^\d+([.,]\d{1,2})?$/.test(value.trim());
 }
 
-// Ссылка: должна быть http(s) и распознаваться как URL
 function isValidUrl(value) {
-  if (value === "" || value === null || value === undefined) return true; // необязательное поле
+  if (value === "" || value === null || value === undefined) return true;
   try {
     const u = new URL(value.trim());
     return u.protocol === "http:" || u.protocol === "https:";
@@ -24,25 +22,66 @@ function isValidUrl(value) {
   }
 }
 
-// Название: не пустое, разумная длина
 function isValidName(value) {
   const v = value.trim();
   return v.length > 0 && v.length <= 200;
 }
 
-// Дата: не в прошлом (для события) — мягкая проверка, не блокирует, только формат
 function isValidDate(value) {
   if (!value) return true;
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-// Перевод ISO-даты (YYYY-MM-DD) в формат ДД.ММ.ГГГГ для отображения
 function formatDateRu(isoDate) {
   if (!isoDate) return "без даты";
   const parts = isoDate.split("-");
   if (parts.length !== 3) return isoDate;
   const [y, m, d] = parts;
   return `${d}.${m}.${y}`;
+}
+
+// =========================
+// СЖАТИЕ КАРТИНОК
+// =========================
+
+const MAX_IMAGE_INPUT_SIZE = 10 * 1024 * 1024; // 10 МБ — лимит на исходный файл до сжатия
+
+function compressImage(file, maxSize = 300, quality = 0.6) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = Math.round(height * (maxSize / width));
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = Math.round(width * (maxSize / height));
+            height = maxSize;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("Не удалось прочитать изображение"));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
+    reader.readAsDataURL(file);
+  });
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -145,8 +184,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       giftDiv.style.alignItems = "center";
 
       const img = g.pic
-        ? `<img src="${g.pic}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">`
-        : "";
+        ? `<img src="${g.pic}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width:40px;height:40px;object-fit:cover;border-radius:4px;flex-shrink:0;">
+           <div style="display:none;width:40px;height:40px;background:#eee;border-radius:4px;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🎁</div>`
+        : `<div style="width:40px;height:40px;background:#eee;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🎁</div>`;
 
       const linkHtml = g.link
         ? `<a href="${g.link}" target="_blank">ссылка</a>`
@@ -256,9 +296,13 @@ window.addEventListener("DOMContentLoaded", async () => {
           <hr>
           <input class="gift-name" placeholder="Название подарка">
           <br><br>
-          <input class="gift-link" placeholder="Ссылка (необязательно)">
+          <input class="gift-link" placeholder="Ссылка на товар (необязательно)">
           <br><br>
-          <input class="gift-pic" placeholder="URL картинки (необязательно)">
+          <label style="font-size:13px;color:#666;">Картинка (необязательно):</label>
+          <br>
+          <input class="gift-pic-file" type="file" accept="image/*">
+          <br>
+          <img class="gift-pic-preview" style="display:none;width:60px;height:60px;object-fit:cover;border-radius:4px;margin-top:6px;">
           <br><br>
           <input class="gift-price" placeholder="Цена (необязательно)" type="text" inputmode="decimal">
           <br><br>
@@ -317,13 +361,41 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
       };
 
+      // === Обработка выбора файла картинки ===
+      const picFileInput = div.querySelector(".gift-pic-file");
+      const picPreview = div.querySelector(".gift-pic-preview");
+      let compressedPicData = null;
+
+      picFileInput.onchange = async () => {
+        const file = picFileInput.files[0];
+        if (!file) return;
+
+        const giftStatus = div.querySelector(".gift-status");
+
+        if (file.size > MAX_IMAGE_INPUT_SIZE) {
+          giftStatus.innerText = "❌ Файл слишком большой (макс. 10 МБ)";
+          picFileInput.value = "";
+          return;
+        }
+
+        try {
+          giftStatus.innerText = "⏳ Обработка изображения...";
+          compressedPicData = await compressImage(file);
+          picPreview.src = compressedPicData;
+          picPreview.style.display = "block";
+          giftStatus.innerText = "";
+        } catch (e) {
+          giftStatus.innerText = "❌ Не удалось обработать картинку";
+          compressedPicData = null;
+        }
+      };
+
       const addGiftBtn = div.querySelector(".add-gift");
       const giftStatus = div.querySelector(".gift-status");
 
       addGiftBtn.onclick = async () => {
         const name = div.querySelector(".gift-name").value.trim();
         const link = div.querySelector(".gift-link").value.trim();
-        const pic = div.querySelector(".gift-pic").value.trim();
         const price = div.querySelector(".gift-price").value.trim();
 
         // === ВАЛИДАЦИЯ ПЕРЕД ОТПРАВКОЙ ===
@@ -339,10 +411,6 @@ window.addEventListener("DOMContentLoaded", async () => {
           giftStatus.innerText = "❌ Ссылка должна начинаться с http:// или https://";
           return;
         }
-        if (!isValidUrl(pic)) {
-          giftStatus.innerText = "❌ Ссылка на картинку должна начинаться с http:// или https://";
-          return;
-        }
 
         giftStatus.innerText = "";
 
@@ -354,7 +422,7 @@ window.addEventListener("DOMContentLoaded", async () => {
               wishlist_id: w.id,
               name,
               link: link || null,
-              pic: pic || null,
+              pic: compressedPicData || null,
               price: price ? price.replace(",", ".") : null
             })
           });
@@ -365,8 +433,10 @@ window.addEventListener("DOMContentLoaded", async () => {
             giftStatus.innerText = "✅ Добавлено";
             div.querySelector(".gift-name").value = "";
             div.querySelector(".gift-link").value = "";
-            div.querySelector(".gift-pic").value = "";
             div.querySelector(".gift-price").value = "";
+            picFileInput.value = "";
+            picPreview.style.display = "none";
+            compressedPicData = null;
             await loadGifts(w.id, giftsList);
           } else {
             giftStatus.innerText = "❌ " + (data.error || "Ошибка");
@@ -390,7 +460,6 @@ window.addEventListener("DOMContentLoaded", async () => {
     const title = document.getElementById("title").value.trim();
     const date = document.getElementById("date").value;
 
-    // === ВАЛИДАЦИЯ ПЕРЕД ОТПРАВКОЙ ===
     if (!isValidName(title)) {
       document.getElementById("status").innerText = "❌ Введите название (до 200 символов)";
       return;
@@ -428,14 +497,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  // ВАЖНО: сначала авторизация, потом загрузка
   await auth();
   await loadWishlists();
 
-  // Если открыли по диплинку с конкретным вишлистом — показать его отдельным блоком сверху
   if (startParam && startParam.startsWith("wishlist_")) {
     const sharedId = startParam.replace("wishlist_", "");
     await showSharedWishlist(sharedId);
   }
 
-}); // ← закрытие DOMContentLoaded
+});
