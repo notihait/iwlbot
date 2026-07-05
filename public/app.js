@@ -1,5 +1,5 @@
 console.log("APP START");
-console.log("VERSION 2026-07-05-GIFTLY");
+console.log("VERSION 2026-07-05");
 
 const BOT_USERNAME = "IWIshList_bot";
 
