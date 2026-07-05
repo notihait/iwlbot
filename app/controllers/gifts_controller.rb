@@ -13,9 +13,8 @@ class GiftsController < Sinatra::Base
     content_type :json
   end
 
-  # =========================
   # CREATE GIFT
-  # =========================
+
   post "/api/gifts" do
     payload = JSON.parse(request.body.read)
 
@@ -54,9 +53,8 @@ class GiftsController < Sinatra::Base
     { ok: true, id: gift.id }.to_json
   end
 
-  # =========================
   # GET GIFTS
-  # =========================
+
   get "/api/gifts" do
     wishlist_id = params["wishlist_id"]
 
@@ -68,9 +66,8 @@ class GiftsController < Sinatra::Base
     gifts.to_json
   end
 
-  # =========================
   # DELETE GIFT
-  # =========================
+
   delete "/api/gifts/:id" do
     gift = Gift.find_by(id: params[:id])
     halt 404, { ok: false, error: "gift not found" }.to_json unless gift

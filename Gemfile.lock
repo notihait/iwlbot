@@ -24,6 +24,11 @@ GEM
     bigdecimal (4.1.2)
     concurrent-ruby (1.3.7)
     connection_pool (3.0.2)
+    database_cleaner-active_record (2.2.2)
+      activerecord (>= 5.a)
+      database_cleaner-core (~> 2.0)
+    database_cleaner-core (2.1.0)
+    diff-lcs (1.6.2)
     dotenv (3.2.0)
     drb (2.2.3)
     dry-core (1.2.0)
@@ -61,12 +66,28 @@ GEM
     ice_nine (0.11.2)
     json (2.20.0)
     logger (1.7.0)
+    mini_portile2 (2.8.9)
     minitest (5.27.0)
     multipart-post (2.4.1)
     mustermann (3.1.1)
     net-http (0.9.1)
       uri (>= 0.11.1)
     nio4r (2.7.5)
+    nokogiri (1.19.4)
+      mini_portile2 (~> 2.8.2)
+      racc (~> 1.4)
+    nokogiri (1.19.4-aarch64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.4-aarch64-linux-musl)
+      racc (~> 1.4)
+    nokogiri (1.19.4-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.4-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.4-x86_64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.4-x86_64-linux-musl)
+      racc (~> 1.4)
     pg (1.6.3)
     pg (1.6.3-aarch64-linux)
     pg (1.6.3-aarch64-linux-musl)
@@ -76,6 +97,7 @@ GEM
     pg (1.6.3-x86_64-linux-musl)
     puma (8.0.2)
       nio4r (~> 2.0)
+    racc (1.8.1)
     rack (3.2.6)
     rack-protection (4.2.1)
       base64 (>= 0.1.0)
@@ -84,9 +106,24 @@ GEM
     rack-session (2.1.2)
       base64 (>= 0.1.0)
       rack (>= 3.0.0)
+    rack-test (2.2.0)
+      rack (>= 1.3)
     rackup (2.3.1)
       rack (>= 3)
     rake (13.4.2)
+    rspec (3.13.2)
+      rspec-core (~> 3.13.0)
+      rspec-expectations (~> 3.13.0)
+      rspec-mocks (~> 3.13.0)
+    rspec-core (3.13.6)
+      rspec-support (~> 3.13.0)
+    rspec-expectations (3.13.5)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-mocks (3.13.8)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-support (3.13.7)
     securerandom (0.4.1)
     sequel (5.106.0)
       bigdecimal
@@ -123,12 +160,16 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord (~> 7.1)
+  database_cleaner-active_record
   dotenv
   json
+  nokogiri
   pg
   puma
+  rack-test
   rackup
   rake
+  rspec
   sequel
   sinatra
   sinatra-activerecord (~> 2.0)

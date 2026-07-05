@@ -4,12 +4,10 @@ RSpec.describe "Gifts API" do
   let(:user)     { User.create!(telegram_id: 111_222, first_name: "Тест") }
   let(:wishlist) { user.wishlists.create!(title: "День рождения") }
 
-  # маленькая валидная base64-картинка (1x1 px JPEG) — для тестов достаточно, что формат совпадает
   let(:valid_pic) { "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAA=" }
 
-  # =========================
-  # POST /api/gifts
-  # =========================
+  # POST
+  
   describe "POST /api/gifts" do
     it "создаёт подарок с валидными данными" do
       post "/api/gifts",
@@ -114,9 +112,8 @@ RSpec.describe "Gifts API" do
     end
   end
 
-  # =========================
-  # GET /api/gifts
-  # =========================
+  # GET
+
   describe "GET /api/gifts" do
     it "возвращает список подарков вишлиста" do
       wishlist.gifts.create!(name: "Подарок 1")
@@ -153,9 +150,8 @@ RSpec.describe "Gifts API" do
     end
   end
 
-  # =========================
-  # DELETE /api/gifts/:id
-  # =========================
+  # DELETE
+
   describe "DELETE /api/gifts/:id" do
     it "удаляет подарок" do
       gift = wishlist.gifts.create!(name: "Удали меня")

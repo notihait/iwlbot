@@ -9,9 +9,8 @@ class WishlistsController < Sinatra::Base
     content_type :json
   end
 
-  # =========================
   # CREATE WISHLIST
-  # =========================
+
   post "/api/wishlists" do
     payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
 
@@ -19,15 +18,15 @@ class WishlistsController < Sinatra::Base
     title      = payload["title"]
     event_date = payload["event_date"]
 
-    # user_id обязателен и должен быть числом
+    # user_id
     halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
     halt 400, { ok: false, error: "user_id must be a number" }.to_json unless user_id.to_s.match?(/\A\d+\z/)
 
-    # title обязателен, не пустой и не слишком длинный
+    # title
     halt 400, { ok: false, error: "title required" }.to_json if title.to_s.strip.empty?
     halt 400, { ok: false, error: "title too long (max 255)" }.to_json if title.to_s.length > 255
 
-    # event_date, если передан, должен быть валидной датой в формате YYYY-MM-DD
+    # event_date
     if event_date && !event_date.to_s.strip.empty?
       begin
         Date.iso8601(event_date)
@@ -38,7 +37,7 @@ class WishlistsController < Sinatra::Base
       event_date = nil
     end
 
-    # проверяем что юзер реально существует, вместо User.find (который кинет 500)
+    # проверяем сущ юзера
     user = User.find_by(id: user_id)
     halt 404, { ok: false, error: "user not found" }.to_json unless user
 
@@ -55,9 +54,8 @@ class WishlistsController < Sinatra::Base
     end
   end
 
-  # =========================
-  # GET WISHLISTS (LIST FOR USER)
-  # =========================
+  # GET WISHLISTS FOR USR
+
   get "/api/wishlists" do
     user_id = params["user_id"]
 
@@ -69,9 +67,7 @@ class WishlistsController < Sinatra::Base
             .to_json
   end
 
-  # =========================
-  # PUBLIC: GET SINGLE WISHLIST (FOR SHARING)
-  # =========================
+  # GET SINGLE WISHLIST
   get "/api/wishlists/:id" do
     halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
 
@@ -86,9 +82,8 @@ class WishlistsController < Sinatra::Base
     }.to_json
   end
 
-  # =========================
   # DELETE WISHLIST
-  # =========================
+
   delete "/api/wishlists/:id" do
     halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
 

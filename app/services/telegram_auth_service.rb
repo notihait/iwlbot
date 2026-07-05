@@ -10,7 +10,7 @@ class TelegramAuthService
     hash = params.delete("hash")
     return nil if hash.nil?
 
-    # строка для проверки — все параметры кроме hash, отсортированные, key=value через \n
+    # все параметры кроме hash
     data_check_string = params.sort.map { |k, v| "#{k}=#{v}" }.join("\n")
 
     secret_key = OpenSSL::HMAC.digest("SHA256", "WebAppData", BOT_TOKEN)
@@ -18,7 +18,7 @@ class TelegramAuthService
 
     return nil unless secure_compare(calculated_hash, hash)
 
-    # опционально: проверка auth_date на "не старше N минут"
+    # проверка auth_date
     auth_date = params["auth_date"].to_i
     return nil if auth_date.zero? || (Time.now.to_i - auth_date) > 86400
 

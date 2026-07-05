@@ -1,4 +1,3 @@
-# bot/bot.rb
 require "telegram/bot"
 require "dotenv/load"
 
@@ -16,16 +15,14 @@ Telegram::Bot::Client.run(TOKEN) do |bot|
     if text_in.start_with?("/start")
       payload = text_in.split(" ", 2)[1]
 
-      # =========================
       # /start с параметром (wishlist_123)
-      # =========================
       if payload && !payload.strip.empty?
         bot.api.send_message(
           chat_id: msg.chat.id,
           text: "🎁 Открываю вишлист #{payload}"
         )
 
-        # ВАЖНО: правильный deep link для mini app
+        # deep link
         bot.api.send_message(
           chat_id: msg.chat.id,
           text: "👇 Открыть миниапп",
@@ -46,9 +43,7 @@ Telegram::Bot::Client.run(TOKEN) do |bot|
         next
       end
 
-      # =========================
-      # обычный /start (твой код без изменений)
-      # =========================
+      # обычный /start
       user = msg.from
       nick = user.first_name.to_s
 
