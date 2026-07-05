@@ -54,6 +54,41 @@ class WishlistsController < Sinatra::Base
     end
   end
 
+  # UPDATE WISHLIST
+
+  put "/api/wishlists/:id" do
+    halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
+
+    wishlist = Wishlist.find_by(id: params[:id])
+    halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
+
+    payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
+
+    title      = payload["title"]
+    event_date = payload["event_date"]
+
+    # title
+    halt 400, { ok: false, error: "title required" }.to_json if title.to_s.strip.empty?
+    halt 400, { ok: false, error: "title too long (max 255)" }.to_json if title.to_s.length > 255
+
+    # event_date
+    if event_date && !event_date.to_s.strip.empty?
+      begin
+        Date.iso8601(event_date)
+      rescue ArgumentError
+        halt 400, { ok: false, error: "invalid event_date format, expected YYYY-MM-DD" }.to_json
+      end
+    else
+      event_date = nil
+    end
+
+    if wishlist.update(title: title.to_s.strip, event_date: event_date)
+      { ok: true }.to_json
+    else
+      halt 422, { ok: false, error: wishlist.errors.full_messages.join(", ") }.to_json
+    end
+  end
+
   # GET WISHLISTS FOR USR
 
   get "/api/wishlists" do
@@ -67,11 +102,9 @@ class WishlistsController < Sinatra::Base
             .to_json
   end
 
-  # GET SINGLE WISHLIST
-  get "/api/wishlists/:id" do
-    halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
-
-    wishlist = Wishlist.find_by(id: params[:id])
+  # GET SINGLE WISHLIST BY PUBLIC ID (для расшаренных ссылок)
+  get "/api/wishlists/public/:public_id" do
+    wishlist = Wishlist.find_by(public_id: params[:public_id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
     {

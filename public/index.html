@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=3">
+  <link rel="stylesheet" href="/styles.css?v=4">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -49,7 +49,7 @@
 
 <section class="sheet" id="sheetCreate" aria-hidden="true">
   <div class="sheet-handle"></div>
-  <h2>Новый вишлист</h2>
+  <h2 id="sheetCreateTitle">Новый вишлист</h2>
   <label for="title">Название</label>
   <input id="title" placeholder="Например, День рождения">
   <label for="date">Дата события <span class="optional">— необязательно</span></label>
@@ -60,7 +60,7 @@
 
 <section class="sheet" id="sheetGift" aria-hidden="true">
   <div class="sheet-handle"></div>
-  <h2>Добавить подарок</h2>
+  <h2 id="sheetGiftTitle">Добавить подарок</h2>
   <label for="giftName">Название</label>
   <input id="giftName" placeholder="Что хотите получить?">
   <label for="giftLink">Ссылка на товар <span class="optional">— необязательно</span></label>
@@ -77,6 +77,6 @@
   <p id="giftStatus" class="form-status"></p>
 </section>
 
-<script src="/app.js?v=5"></script>
+<script src="/app.js?v=6"></script>
 </body>
 </html>

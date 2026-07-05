@@ -310,6 +310,62 @@
   }
   .add-gift-trigger:active { background: var(--primary-soft); }
   
+  /* ---------- gift actions (edit / reserve) ---------- */
+  
+  .gift-actions-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  
+  .gift-edit {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .gift-edit:active { transform: scale(0.97); }
+  
+  .gift-reserve {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .gift-reserve:active { transform: scale(0.97); }
+  
+  .gift-reserved-badge {
+    width: 100%;
+    text-align: center;
+    background: var(--surface-alt);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+  }
+  
+  .shared-banner .gift-reserve {
+    background: rgba(255,255,255,0.16);
+    border-color: rgba(255,255,255,0.4);
+    color: #fff;
+  }
+  .shared-banner .gift-reserved-badge {
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+  }
+  
   /* ---------- shared wishlist banner ---------- */
   
   .shared-banner {

@@ -127,10 +127,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const user = tg.initDataUnsafe?.user;
 
-  // Основной путь: официальный механизм t.me/<bot>?startapp=X кладёт значение
-  // сюда. Резервный путь: если параметр пришёл прямо в URL страницы (например,
-  // из-за WebAppInfo.url с руками приклеенным ?startapp=... в боте),
-  // Telegram его не распарсит сам — читаем URL напрямую.
   const urlStartParam = new URLSearchParams(window.location.search).get("startapp")
     || new URLSearchParams(window.location.search).get("tgWebAppStartParam");
 
@@ -153,6 +149,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   let currentGiftWishlistId = null;
   let currentGiftsContainer = null;
   let compressedPicData = null;
+
+  let editingWishlistId = null;
+  let editingGiftId = null;
+  let editingGiftOriginalPic = null;
 
   const wishlistsList = document.getElementById("wishlistsList");
   const sharedBanner = document.getElementById("sharedBanner");
@@ -202,14 +202,77 @@ window.addEventListener("DOMContentLoaded", async () => {
       ? ""
       : `<button class="gift-remove" data-gift-id="${g.id}" aria-label="Удалить подарок">✕</button>`;
 
+    const editBtn = readOnly
+      ? ""
+      : `<button class="gift-edit" data-gift-id="${g.id}">✏️ Изменить</button>`;
+
+    let reserveControl;
+    if (g.reserved && !g.reserved_by_me) {
+      reserveControl = `<div class="gift-reserved-badge">🔒 забронировано</div>`;
+    } else {
+      const label = g.reserved_by_me ? "Отменить бронь" : "Забронировать";
+      reserveControl = `<button class="gift-reserve" data-gift-id="${g.id}" data-reserved="${g.reserved_by_me}">${label}</button>`;
+    }
+
     return `
       <div class="gift-card">
         <div class="gift-thumb-wrap">${img}${price}</div>
         ${removeBtn}
         <div class="gift-name">${escapeHtml(g.name)}</div>
         ${link}
+        <div class="gift-actions-row">
+          ${editBtn}
+          ${reserveControl}
+        </div>
       </div>
     `;
+  }
+
+  // =========================
+  // GIFT SHEET (add / edit)
+  // =========================
+  function resetGiftSheet() {
+    document.getElementById("giftName").value = "";
+    document.getElementById("giftLink").value = "";
+    document.getElementById("giftPrice").value = "";
+    document.getElementById("giftPicFile").value = "";
+    document.getElementById("giftPicPreview").style.display = "none";
+    document.getElementById("giftStatus").textContent = "";
+    document.getElementById("giftStatus").className = "form-status";
+    compressedPicData = null;
+    editingGiftId = null;
+    editingGiftOriginalPic = null;
+    document.getElementById("sheetGiftTitle").textContent = "Добавить подарок";
+    document.getElementById("addGift").textContent = "Добавить в список";
+  }
+
+  function openGiftSheetForEdit(gift, wishlistId, container) {
+    currentGiftWishlistId = wishlistId;
+    currentGiftsContainer = container;
+    editingGiftId = gift.id;
+    editingGiftOriginalPic = gift.pic || null;
+    compressedPicData = null;
+
+    document.getElementById("giftName").value = gift.name || "";
+    document.getElementById("giftLink").value = gift.link || "";
+    document.getElementById("giftPrice").value = gift.price || "";
+
+    const preview = document.getElementById("giftPicPreview");
+    if (gift.pic) {
+      preview.src = gift.pic;
+      preview.style.display = "block";
+    } else {
+      preview.style.display = "none";
+    }
+
+    document.getElementById("giftPicFile").value = "";
+    document.getElementById("giftStatus").textContent = "";
+    document.getElementById("giftStatus").className = "form-status";
+
+    document.getElementById("sheetGiftTitle").textContent = "Изменить подарок";
+    document.getElementById("addGift").textContent = "Сохранить изменения";
+
+    openSheet(sheetGift);
   }
 
   // =========================
@@ -218,7 +281,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   async function loadGifts(wishlistId, container, readOnly = false) {
     container.innerHTML = `<div class="gifts-empty">Загрузка подарков…</div>`;
 
-    const res = await fetch(`/api/gifts?wishlist_id=${wishlistId}`);
+    const res = await fetch(`/api/gifts?wishlist_id=${wishlistId}&viewer_id=${userId || ""}`);
     const gifts = await res.json();
 
     if (!Array.isArray(gifts) || gifts.length === 0) {
@@ -236,13 +299,44 @@ window.addEventListener("DOMContentLoaded", async () => {
           await loadGifts(wishlistId, container, readOnly);
         };
       });
+
+      container.querySelectorAll(".gift-edit").forEach((btn) => {
+        btn.onclick = () => {
+          const giftId = btn.dataset.giftId;
+          const gift = gifts.find((g) => String(g.id) === String(giftId));
+          if (gift) openGiftSheetForEdit(gift, wishlistId, container);
+        };
+      });
     }
+
+    container.querySelectorAll(".gift-reserve").forEach((btn) => {
+      btn.onclick = async () => {
+        const giftId = btn.dataset.giftId;
+        const reserved = btn.dataset.reserved === "true";
+        const method = reserved ? "DELETE" : "POST";
+        try {
+          const res = await fetch(`/api/gifts/${giftId}/reserve`, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            await loadGifts(wishlistId, container, readOnly);
+          } else {
+            alert(data.error || "Ошибка");
+          }
+        } catch (e) {
+          alert("❌ Сетевая ошибка");
+        }
+      };
+    });
   }
 
   // =========================
   // SHOW SHARED WISHLIST
   // =========================
-  async function showSharedWishlist(wishlistId) {
+  async function showSharedWishlist(publicId) {
     sharedBanner.innerHTML = `
       <div class="shared-banner">
         <div class="eyebrow">Вишлист по ссылке</div>
@@ -251,7 +345,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     `;
 
     try {
-      const res = await fetch(`/api/wishlists/${wishlistId}`);
+      const res = await fetch(`/api/wishlists/public/${publicId}`);
       if (!res.ok) throw new Error("not found");
       const w = await res.json();
       const dateStr = formatDateRu(w.event_date);
@@ -311,6 +405,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         </div>
         <div class="tag-card-actions">
           <button class="chip-btn primary toggle-gifts">🎁 Подарки</button>
+          <button class="chip-btn edit-wishlist">✏️ Изменить</button>
           <button class="chip-btn share-wishlist">🔗 Поделиться</button>
           <button class="chip-btn danger delete-wishlist">🗑 Удалить</button>
         </div>
@@ -330,8 +425,19 @@ window.addEventListener("DOMContentLoaded", async () => {
         if (isOpen) await loadGifts(w.id, grid, false);
       };
 
+      card.querySelector(".edit-wishlist").onclick = () => {
+        editingWishlistId = w.id;
+        document.getElementById("title").value = w.title || "";
+        document.getElementById("date").value = w.event_date || "";
+        document.getElementById("status").textContent = "";
+        document.getElementById("status").className = "form-status";
+        document.getElementById("sheetCreateTitle").textContent = "Изменить вишлист";
+        document.getElementById("create").textContent = "Сохранить изменения";
+        openSheet(sheetCreate);
+      };
+
       card.querySelector(".share-wishlist").onclick = async () => {
-        const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${w.id}`;
+        const url = `https://t.me/${BOT_USERNAME}?startapp=wishlist_${w.public_id}`;
         try {
           await navigator.clipboard.writeText(url);
           alert("Ссылка скопирована:\n" + url);
@@ -359,27 +465,23 @@ window.addEventListener("DOMContentLoaded", async () => {
       card.querySelector(".add-gift-trigger").onclick = () => {
         currentGiftWishlistId = w.id;
         currentGiftsContainer = grid;
-        document.getElementById("giftName").value = "";
-        document.getElementById("giftLink").value = "";
-        document.getElementById("giftPrice").value = "";
-        document.getElementById("giftPicFile").value = "";
-        document.getElementById("giftPicPreview").style.display = "none";
-        document.getElementById("giftStatus").textContent = "";
-        document.getElementById("giftStatus").className = "form-status";
-        compressedPicData = null;
+        resetGiftSheet();
         openSheet(sheetGift);
       };
     });
   }
 
   // =========================
-  // CREATE WISHLIST (sheet)
+  // CREATE / EDIT WISHLIST (sheet)
   // =========================
   document.getElementById("fabCreate").onclick = () => {
+    editingWishlistId = null;
     document.getElementById("title").value = "";
     document.getElementById("date").value = "";
     document.getElementById("status").textContent = "";
     document.getElementById("status").className = "form-status";
+    document.getElementById("sheetCreateTitle").textContent = "Новый вишлист";
+    document.getElementById("create").textContent = "Создать вишлист";
     openSheet(sheetCreate);
   };
 
@@ -410,16 +512,23 @@ window.addEventListener("DOMContentLoaded", async () => {
     statusEl.className = "form-status";
 
     try {
-      const res = await fetch("/api/wishlists", {
-        method: "POST",
+      const isEditing = !!editingWishlistId;
+      const url = isEditing ? `/api/wishlists/${editingWishlistId}` : "/api/wishlists";
+      const method = isEditing ? "PUT" : "POST";
+      const body = isEditing
+        ? { title, event_date: date || null }
+        : { user_id: userId, title, event_date: date || null };
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, title, event_date: date || null })
+        body: JSON.stringify(body)
       });
 
       const data = await res.json();
 
       if (data.ok) {
-        statusEl.textContent = "✅ Создано";
+        statusEl.textContent = isEditing ? "✅ Сохранено" : "✅ Создано";
         statusEl.className = "form-status success";
         await loadWishlists();
         setTimeout(closeSheets, 500);
@@ -434,7 +543,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   };
 
   // =========================
-  // ADD GIFT (sheet)
+  // ADD / EDIT GIFT (sheet)
   // =========================
   const picFileInput = document.getElementById("giftPicFile");
   const picPreview = document.getElementById("giftPicPreview");
@@ -491,23 +600,39 @@ window.addEventListener("DOMContentLoaded", async () => {
     giftStatus.textContent = "";
     giftStatus.className = "form-status";
 
+    // при редактировании: если пользователь не выбирал новую картинку,
+    // сохраняем ту, что уже была у подарка
+    const picToSend = compressedPicData || (editingGiftId ? editingGiftOriginalPic : null);
+
     try {
-      const res = await fetch("/api/gifts", {
-        method: "POST",
+      const isEditing = !!editingGiftId;
+      const url = isEditing ? `/api/gifts/${editingGiftId}` : "/api/gifts";
+      const method = isEditing ? "PUT" : "POST";
+      const body = isEditing
+        ? {
+            name,
+            link: link || null,
+            pic: picToSend || null,
+            price: price ? price.replace(",", ".") : null
+          }
+        : {
+            wishlist_id: currentGiftWishlistId,
+            name,
+            link: link || null,
+            pic: picToSend || null,
+            price: price ? price.replace(",", ".") : null
+          };
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          wishlist_id: currentGiftWishlistId,
-          name,
-          link: link || null,
-          pic: compressedPicData || null,
-          price: price ? price.replace(",", ".") : null
-        })
+        body: JSON.stringify(body)
       });
 
       const data = await res.json();
 
       if (data.ok) {
-        giftStatus.textContent = "✅ Добавлено";
+        giftStatus.textContent = isEditing ? "✅ Сохранено" : "✅ Добавлено";
         giftStatus.className = "form-status success";
         if (currentGiftsContainer) {
           await loadGifts(currentGiftWishlistId, currentGiftsContainer, false);
