@@ -2,23 +2,81 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IWLBOT</title>
-  <link rel="stylesheet" href="/styles.css?v=2">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>giftly — вишлисты</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=3">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
-<div id="debug">
-  <h3>Отладка</h3>
-  <div id="out">Загрузка...</div>
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">🎁</span>
+      <span class="brand-name">giftly</span>
+    </div>
+    <div class="user-pill" id="userPill">
+      <span class="user-pill-dot"></span>
+      <span id="userPillText">подключение…</span>
+    </div>
+  </header>
+
+  <div id="sharedBanner"></div>
+
+  <main class="content">
+    <div class="section-head">
+      <h1>Мои вишлисты</h1>
+      <p class="muted">Собирайте подарки в списки и делитесь ссылкой с друзьями</p>
+    </div>
+
+    <div id="wishlistsList" class="wishlists-stack">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+    </div>
+  </main>
+
+  <button id="fabCreate" class="fab" aria-label="Создать вишлист">
+    <span>+</span>
+  </button>
+
 </div>
 
-<hr>
+<div class="sheet-overlay" id="overlay"></div>
 
-<div id="app"></div>
+<section class="sheet" id="sheetCreate" aria-hidden="true">
+  <div class="sheet-handle"></div>
+  <h2>Новый вишлист</h2>
+  <label for="title">Название</label>
+  <input id="title" placeholder="Например, День рождения">
+  <label for="date">Дата события <span class="optional">— необязательно</span></label>
+  <input id="date" type="date">
+  <button id="create" class="btn btn-primary">Создать вишлист</button>
+  <p id="status" class="form-status"></p>
+</section>
 
-<script src="/app.js?v=4"></script>
+<section class="sheet" id="sheetGift" aria-hidden="true">
+  <div class="sheet-handle"></div>
+  <h2>Добавить подарок</h2>
+  <label for="giftName">Название</label>
+  <input id="giftName" placeholder="Что хотите получить?">
+  <label for="giftLink">Ссылка на товар <span class="optional">— необязательно</span></label>
+  <input id="giftLink" placeholder="https://…">
+  <label>Фото <span class="optional">— необязательно</span></label>
+  <div class="file-drop">
+    <label class="file-btn" for="giftPicFile">Выбрать фото</label>
+    <input id="giftPicFile" type="file" accept="image/*" hidden>
+    <img id="giftPicPreview" class="pic-preview" style="display:none">
+  </div>
+  <label for="giftPrice">Цена <span class="optional">— необязательно</span></label>
+  <input id="giftPrice" placeholder="1500" inputmode="decimal">
+  <button id="addGift" class="btn btn-accent">Добавить в список</button>
+  <p id="giftStatus" class="form-status"></p>
+</section>
 
+<script src="/app.js?v=5"></script>
 </body>
 </html>
