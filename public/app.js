@@ -126,10 +126,18 @@ window.addEventListener("DOMContentLoaded", async () => {
   tg.expand?.();
 
   const user = tg.initDataUnsafe?.user;
-  const startParam = tg.initDataUnsafe?.start_param;
+
+  // Основной путь: официальный механизм t.me/<bot>?startapp=X кладёт значение
+  // сюда. Резервный путь: если параметр пришёл прямо в URL страницы (например,
+  // из-за WebAppInfo.url с руками приклеенным ?startapp=... в боте),
+  // Telegram его не распарсит сам — читаем URL напрямую.
+  const urlStartParam = new URLSearchParams(window.location.search).get("startapp")
+    || new URLSearchParams(window.location.search).get("tgWebAppStartParam");
+
+  const startParam = tg.initDataUnsafe?.start_param || urlStartParam;
 
   console.log("USER:", user);
-  console.log("START PARAM:", startParam);
+  console.log("START PARAM:", startParam, "(tg:", tg.initDataUnsafe?.start_param, ", url:", urlStartParam, ")");
 
   const userPillText = document.getElementById("userPillText");
 

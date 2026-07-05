@@ -32,10 +32,16 @@ class App < Sinatra::Base
   use GiftsController
 
   get "/" do
+    cache_control :no_cache, :no_store, :must_revalidate
+    headers["Pragma"] = "no-cache"
+    headers["Expires"] = "0"
     send_file File.join(settings.public_folder, "index.html")
   end
-
+  
   get "/wishlist/:id" do
+    cache_control :no_cache, :no_store, :must_revalidate
+    headers["Pragma"] = "no-cache"
+    headers["Expires"] = "0"
     send_file File.join(settings.public_folder, "index.html")
   end
 
