@@ -517,6 +517,42 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =========================
+  // LOAD FOLLOWED WISHLISTS
+  // =========================
+  async function loadFollowedWishlists() {
+    const followedList = document.getElementById("followedList");
+    if (!userId || !followedList) return;
+
+    const res = await fetch(`/api/wishlists/followed?user_id=${userId}`);
+    const data = await res.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      followedList.innerHTML = "";
+      return;
+    }
+
+    followedList.innerHTML = `<div class="section-head"><h1>Я слежу за</h1></div>` +
+      data.map((w) => {
+        const dateStr = formatDateRu(w.event_date);
+        return `
+        <div class="tag-card followed-card" data-public-id="${w.public_id}">
+          <div class="tag-card-head">
+            <div class="tag-card-title">${escapeHtml(w.title)} <span class="muted">— ${escapeHtml(w.owner_name || "")}</span></div>
+            <div class="tag-date ${dateStr ? "" : "no-date"}">${dateStr ? "📅 " + dateStr : "без даты"}</div>
+          </div>
+        </div>
+      `;
+      }).join("");
+
+    followedList.querySelectorAll(".followed-card").forEach((card) => {
+      card.onclick = () => {
+        showSharedWishlist(card.dataset.publicId);
+        sharedBanner.scrollIntoView({ behavior: "smooth" });
+      };
+    });
+  }
+
+  // =========================
   // CREATE / EDIT WISHLIST (sheet)
   // =========================
   document.getElementById("fabCreate").onclick = () => {
@@ -700,6 +736,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     await auth();
     userPillText.textContent = user.first_name || user.username || "гость";
     await loadWishlists();
+    await loadFollowedWishlists();
   } catch (e) {
     console.error("AUTH ERROR:", e);
     userPillText.textContent = "ошибка авторизации";
