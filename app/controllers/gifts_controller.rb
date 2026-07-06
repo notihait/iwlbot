@@ -51,16 +51,17 @@ class GiftsController < Sinatra::Base
 
     gift.save!
 
-    owner_name = wishlist.user&.first_name || "друга"
+owner_name = wishlist.user&.first_name || "друга"
+wishlist_link = NotifyFollowersService.wishlist_link_html(wishlist)
 
-    NotifyFollowersService.call(
-      wishlist,
-      "🎁 #{owner_name} добавил(а) новый подарок в вишлист «#{wishlist.title}»: #{gift.name}"
-    )
+NotifyFollowersService.call(
+  wishlist,
+  "🎁 #{owner_name} добавил(а) новый подарок в вишлист #{wishlist_link}: #{gift.name}"
+)
 
-    status 201
-    { ok: true, id: gift.id }.to_json
-  end
+status 201
+{ ok: true, id: gift.id }.to_json
+end
 
   # UPDATE GIFT
 
