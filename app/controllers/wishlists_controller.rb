@@ -111,14 +111,21 @@ class WishlistsController < Sinatra::Base
 
   # GET SINGLE WISHLIST BY PUBLIC ID (для расшаренных ссылок)
   get "/api/wishlists/public/:public_id" do
+    viewer_id = params["viewer_id"]
+  
     wishlist = Wishlist.active.find_by(public_id: params[:public_id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
-
+  
+    is_following = viewer_id.present? &&
+      WishlistFollow.exists?(wishlist_id: wishlist.id, user_id: viewer_id)
+  
     {
       id: wishlist.id,
+      owner_id: wishlist.user_id,
       title: wishlist.title,
       event_date: wishlist.event_date,
-      owner_name: wishlist.user&.first_name
+      owner_name: wishlist.user&.first_name,
+      is_following: is_following
     }.to_json
   end
 
