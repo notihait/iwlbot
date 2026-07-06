@@ -446,20 +446,22 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
       };
 
-      card.querySelector(".delete-wishlist").onclick = async () => {
-        if (!confirm("Удалить вишлист?")) return;
-        try {
-          const res = await fetch(`/api/wishlists/${w.id}`, { method: "DELETE" });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok && data.ok !== false) {
-            card.remove();
-            if (!wishlistsList.querySelector(".tag-card")) await loadWishlists();
-          } else {
-            alert("❌ Ошибка удаления");
+      card.querySelector(".delete-wishlist").onclick = () => {
+        tg.showConfirm("Удалить вишлист?", async (confirmed) => {
+          if (!confirmed) return;
+          try {
+            const res = await fetch(`/api/wishlists/${w.id}`, { method: "DELETE" });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok !== false) {
+              card.remove();
+              if (!wishlistsList.querySelector(".tag-card")) await loadWishlists();
+            } else {
+              alert("❌ Ошибка удаления");
+            }
+          } catch (e) {
+            alert("❌ Сетевая ошибка");
           }
-        } catch (e) {
-          alert("❌ Сетевая ошибка");
-        }
+        });
       };
 
       card.querySelector(".add-gift-trigger").onclick = () => {
