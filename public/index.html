@@ -7,14 +7,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=4">
+  <link rel="stylesheet" href="/styles.css?v=5">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
 
 <div class="page">
 
-  <header class="topbar">
+  <header class="topbar" id="topbar">
     <div class="brand">
       <span class="brand-mark">🎁</span>
       <span class="brand-name">IWishList</span>
@@ -27,7 +27,13 @@
 
   <div id="sharedBanner"></div>
 
-  <main class="content">
+  <div id="notTelegramScreen" class="not-telegram-screen" style="display:none">
+    <span class="glyph">📱</span>
+    <h2>Откройте через Telegram</h2>
+    <p>Это приложение работает только внутри Telegram. Откройте его через бота @iwishlist_bot.</p>
+  </div>
+
+  <main class="content" id="mainContent">
     <div class="section-head">
       <h1>Мои вишлисты</h1>
       <p class="muted">Собирайте подарки в списки и делитесь ссылкой с друзьями</p>
@@ -77,6 +83,6 @@
   <p id="giftStatus" class="form-status"></p>
 </section>
 
-<script src="/app.js?v=6"></script>
+<script src="/app.js?v=9"></script>
 </body>
 </html>

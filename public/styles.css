@@ -526,6 +526,31 @@
   }
   .form-status.error { color: var(--danger); }
   .form-status.success { color: var(--success); }
+
+  /* ---------- not telegram screen ---------- */
+
+.not-telegram-screen {
+  text-align: center;
+  padding: 60px 24px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.not-telegram-screen .glyph {
+  font-size: 44px;
+  display: block;
+  margin-bottom: 16px;
+}
+.not-telegram-screen h2 {
+  font-size: 19px;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+.not-telegram-screen p {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
   
   /* ---------- focus visibility ---------- */
   button:focus-visible, input:focus-visible, a:focus-visible {

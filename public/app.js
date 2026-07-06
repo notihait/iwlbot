@@ -1,5 +1,5 @@
 console.log("APP START");
-console.log("VERSION 2026-07-05");
+console.log("VERSION 2026-07-06");
 
 const BOT_USERNAME = "IWIshList_bot";
 
@@ -116,9 +116,19 @@ overlay.addEventListener("click", closeSheets);
 window.addEventListener("DOMContentLoaded", async () => {
 
   const tg = window.Telegram?.WebApp;
+  const notTelegramScreen = document.getElementById("notTelegramScreen");
+  const mainContent = document.getElementById("mainContent");
+  const fabCreate = document.getElementById("fabCreate");
+  const topbar = document.getElementById("topbar");
 
-  if (!tg) {
-    console.error("Telegram WebApp not found");
+  const isRunningInTelegram = !!(tg && tg.initData && tg.initData.length > 0);
+
+  if (!isRunningInTelegram) {
+    console.error("Not running inside Telegram");
+    notTelegramScreen.style.display = "block";
+    mainContent.style.display = "none";
+    fabCreate.style.display = "none";
+    if (topbar) topbar.style.display = "none";
     return;
   }
 
