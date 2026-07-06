@@ -4,7 +4,8 @@ require "date"
 
 class WishlistsController < Sinatra::Base
   set :host_authorization, {}
-
+  disable :protection
+  
   before do
     content_type :json
   end

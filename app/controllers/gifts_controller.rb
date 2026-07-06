@@ -3,6 +3,7 @@ require "json"
 
 class GiftsController < Sinatra::Base
   set :host_authorization, {}
+  disable :protection
 
   MAX_NAME_LENGTH = 200
   MAX_PIC_BASE64_SIZE = 500_000 # ~500 КБ base64-строки, с запасом на сжатую картинку 300x300
