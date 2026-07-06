@@ -38,7 +38,7 @@ class GiftsController < Sinatra::Base
       halt 400, { ok: false, error: "image too large" }.to_json if pic.bytesize > MAX_PIC_BASE64_SIZE
     end
 
-    wishlist = Wishlist.find_by(id: wishlist_id)
+    wishlist = Wishlist.active.find_by(id: wishlist_id)
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
     gift = wishlist.gifts.new(
@@ -57,7 +57,7 @@ class GiftsController < Sinatra::Base
   # UPDATE GIFT
 
   put "/api/gifts/:id" do
-    gift = Gift.find_by(id: params[:id])
+    gift = Gift.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "gift not found" }.to_json unless gift
 
     payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
@@ -97,7 +97,8 @@ class GiftsController < Sinatra::Base
 
     halt 400, { ok: false, error: "wishlist_id required" }.to_json if wishlist_id.to_s.strip.empty?
 
-    gifts = Gift.where(wishlist_id: wishlist_id)
+    gifts = Gift.active
+                .where(wishlist_id: wishlist_id)
                 .order(created_at: :desc)
 
     result = gifts.map do |g|
@@ -123,7 +124,7 @@ class GiftsController < Sinatra::Base
 
     halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
 
-    gift = Gift.find_by(id: params[:id])
+    gift = Gift.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "gift not found" }.to_json unless gift
 
     if gift.reserved_by_id && gift.reserved_by_id.to_s != user_id.to_s
@@ -141,7 +142,7 @@ class GiftsController < Sinatra::Base
     payload = JSON.parse(request.body.read) rescue {}
     user_id = payload["user_id"]
 
-    gift = Gift.find_by(id: params[:id])
+    gift = Gift.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "gift not found" }.to_json unless gift
 
     if gift.reserved_by_id && gift.reserved_by_id.to_s != user_id.to_s
@@ -153,13 +154,13 @@ class GiftsController < Sinatra::Base
     { ok: true }.to_json
   end
 
-  # DELETE GIFT
+  # DELETE GIFT (soft delete / архивация)
 
   delete "/api/gifts/:id" do
-    gift = Gift.find_by(id: params[:id])
+    gift = Gift.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "gift not found" }.to_json unless gift
 
-    gift.destroy
+    gift.update!(deleted_at: Time.now)
 
     { ok: true }.to_json
   end

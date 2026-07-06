@@ -5,7 +5,7 @@ require "date"
 class WishlistsController < Sinatra::Base
   set :host_authorization, {}
   disable :protection
-  
+
   before do
     content_type :json
   end
@@ -60,7 +60,7 @@ class WishlistsController < Sinatra::Base
   put "/api/wishlists/:id" do
     halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
 
-    wishlist = Wishlist.find_by(id: params[:id])
+    wishlist = Wishlist.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
     payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
@@ -98,14 +98,15 @@ class WishlistsController < Sinatra::Base
     halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
     halt 400, { ok: false, error: "user_id must be a number" }.to_json unless user_id.to_s.match?(/\A\d+\z/)
 
-    Wishlist.where(user_id: user_id)
+    Wishlist.active
+            .where(user_id: user_id)
             .order(created_at: :desc)
             .to_json
   end
 
   # GET SINGLE WISHLIST BY PUBLIC ID (для расшаренных ссылок)
   get "/api/wishlists/public/:public_id" do
-    wishlist = Wishlist.find_by(public_id: params[:public_id])
+    wishlist = Wishlist.active.find_by(public_id: params[:public_id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
     {
@@ -116,15 +117,15 @@ class WishlistsController < Sinatra::Base
     }.to_json
   end
 
-  # DELETE WISHLIST
+  # DELETE WISHLIST (soft delete / архивация)
 
   delete "/api/wishlists/:id" do
     halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
 
-    wishlist = Wishlist.find_by(id: params[:id])
+    wishlist = Wishlist.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
-    wishlist.destroy
+    wishlist.archive!
 
     { ok: true }.to_json
   end
