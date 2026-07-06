@@ -555,7 +555,21 @@
   line-height: 1.5;
   margin: 0;
 }
-  
+
+
+.follow-btn {
+  width: 100%;
+  margin-top: 12px;
+  border: 1.5px solid rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.follow-btn:active { transform: scale(0.98); }
   /* ---------- focus visibility ---------- */
   button:focus-visible, input:focus-visible, a:focus-visible {
     outline: 2px solid var(--primary);

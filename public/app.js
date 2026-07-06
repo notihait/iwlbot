@@ -376,22 +376,56 @@ window.addEventListener("DOMContentLoaded", async () => {
         <h3>Загрузка…</h3>
       </div>
     `;
-
+  
     try {
-      const res = await fetch(`/api/wishlists/public/${publicId}`);
+      const res = await fetch(`/api/wishlists/public/${publicId}?viewer_id=${userId || ""}`);
       if (!res.ok) throw new Error("not found");
       const w = await res.json();
       const dateStr = formatDateRu(w.event_date);
-
+      const isOwner = String(w.owner_id) === String(userId);
+  
+      const followBtn = isOwner
+        ? ""
+        : `<button class="follow-btn" data-wishlist-id="${w.id}" data-following="${w.is_following}">
+            ${w.is_following ? "✓ Вы подписаны" : "🔔 Следить за вишлистом"}
+          </button>`;
+  
       sharedBanner.innerHTML = `
         <div class="shared-banner">
           <div class="eyebrow">🎁 Вишлист от ${escapeHtml(w.owner_name || "друга")}</div>
           <h3>${escapeHtml(w.title)}</h3>
           ${dateStr ? `<div class="date-line">📅 ${dateStr}</div>` : ""}
+          ${followBtn}
           <div class="gifts-grid" id="sharedGiftsGrid"></div>
         </div>
       `;
-
+  
+      const btn = sharedBanner.querySelector(".follow-btn");
+      if (btn) {
+        btn.onclick = async () => {
+          const following = btn.dataset.following === "true";
+          const method = following ? "DELETE" : "POST";
+  
+          try {
+            const res = await fetch(`/api/wishlists/${w.id}/follow`, {
+              method,
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ user_id: userId })
+            });
+            const data = await res.json();
+            if (data.ok) {
+              btn.dataset.following = (!following).toString();
+              btn.textContent = !following ? "✓ Вы подписаны" : "🔔 Следить за вишлистом";
+              await loadFollowedWishlists();
+            } else {
+              alert(data.error || "Ошибка");
+            }
+          } catch (e) {
+            alert("❌ Сетевая ошибка");
+          }
+        };
+      }
+  
       await loadGifts(w.id, document.getElementById("sharedGiftsGrid"), true);
     } catch (e) {
       console.error("SHARED WISHLIST ERROR:", e);

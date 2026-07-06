@@ -1,6 +1,8 @@
 class Wishlist < ActiveRecord::Base
   belongs_to :user
   has_many :gifts, dependent: :destroy
+  has_many :wishlist_follows, dependent: :destroy
+  has_many :followers, through: :wishlist_follows, source: :user
 
   before_create :generate_public_id
 
