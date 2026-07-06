@@ -80,10 +80,11 @@ class WishlistsController < Sinatra::Base
 
     if wishlist.update(title: title.to_s.strip, event_date: event_date)
       owner_name = wishlist.user&.first_name || "друга"
+      wishlist_link = NotifyFollowersService.wishlist_link_html(wishlist)
 
       NotifyFollowersService.call(
         wishlist,
-        "✏️ #{owner_name} обновил(а) вишлист «#{wishlist.title}»"
+        "✏️ #{owner_name} обновил(а) вишлист #{wishlist_link}"
       )
       { ok: true }.to_json
     else
@@ -195,10 +196,11 @@ class WishlistsController < Sinatra::Base
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
     owner_name = wishlist.user&.first_name || "друга"
+    wishlist_link = NotifyFollowersService.wishlist_link_html(wishlist)
 
     NotifyFollowersService.call(
       wishlist,
-      "🗑 #{owner_name} удалил(а) вишлист «#{wishlist.title}»"
+      "🗑 #{owner_name} удалил(а) вишлист #{wishlist_link}"
     )
 
     wishlist.archive!
