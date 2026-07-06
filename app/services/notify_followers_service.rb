@@ -8,13 +8,11 @@ class NotifyFollowersService
     bot_token = ENV["BOT_TOKEN"]
     return if bot_token.to_s.empty?
 
-    full_text = "#{text} #{wishlist_link_html(wishlist)}"
-
     wishlist.followers.each do |follower|
       next if follower.telegram_id.nil?
       next if exclude_user_id && follower.id.to_s == exclude_user_id.to_s
 
-      send_message(bot_token, follower.telegram_id, full_text)
+      send_message(bot_token, follower.telegram_id, text)
     end
   end
 
