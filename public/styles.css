@@ -175,8 +175,8 @@
   
   .tag-card-actions {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
     margin-top: 14px;
   }
   
@@ -184,15 +184,15 @@
     border: 1.5px solid var(--border);
     background: var(--surface);
     color: var(--text);
-    font-size: 12.5px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 10px 8px;
+    padding: 9px 4px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 3px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
