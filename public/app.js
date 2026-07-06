@@ -216,13 +216,17 @@ window.addEventListener("DOMContentLoaded", async () => {
       ? ""
       : `<button class="gift-edit" data-gift-id="${g.id}">✏️ Изменить</button>`;
 
-    let reserveControl;
-    if (g.reserved && !g.reserved_by_me) {
-      reserveControl = `<div class="gift-reserved-badge">🔒 забронировано</div>`;
-    } else {
-      const label = g.reserved_by_me ? "Отменить бронь" : "Забронировать";
-      reserveControl = `<button class="gift-reserve" data-gift-id="${g.id}" data-reserved="${g.reserved_by_me}">${label}</button>`;
-    }
+      let reserveControl;
+      if (g.reserved && !g.reserved_by_me) {
+        if (readOnly) {
+          reserveControl = `<div class="gift-reserved-badge">🔒 забронировано</div>`;
+        } else {
+          reserveControl = `<button class="gift-reserve owner-cancel" data-gift-id="${g.id}" data-reserved="owner">Снять бронь</button>`;
+        }
+      } else {
+        const label = g.reserved_by_me ? "Отменить бронь" : "Забронировать";
+        reserveControl = `<button class="gift-reserve" data-gift-id="${g.id}" data-reserved="${g.reserved_by_me}">${label}</button>`;
+      }
 
     return `
       <div class="gift-card">
@@ -320,10 +324,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     container.querySelectorAll(".gift-reserve").forEach((btn) => {
-      btn.onclick = async () => {
+      const doToggle = async () => {
         const giftId = btn.dataset.giftId;
-        const reserved = btn.dataset.reserved === "true";
-        const method = reserved ? "DELETE" : "POST";
+        const method = btn.dataset.reserved === "false" ? "POST" : "DELETE";
         try {
           const res = await fetch(`/api/gifts/${giftId}/reserve`, {
             method,
@@ -338,6 +341,26 @@ window.addEventListener("DOMContentLoaded", async () => {
           }
         } catch (e) {
           alert("❌ Сетевая ошибка");
+        }
+      };
+
+      btn.onclick = () => {
+        if (btn.classList.contains("owner-cancel")) {
+          tg.showPopup(
+            {
+              title: "Снять бронь?",
+              message: "Пользователь, который забронировал подарок, увидит, что бронь снята.",
+              buttons: [
+                { id: "cancel", type: "cancel" },
+                { id: "confirm", type: "destructive", text: "Снять бронь" }
+              ]
+            },
+            (buttonId) => {
+              if (buttonId === "confirm") doToggle();
+            }
+          );
+        } else {
+          doToggle();
         }
       };
     });

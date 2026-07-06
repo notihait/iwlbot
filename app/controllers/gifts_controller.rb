@@ -145,7 +145,10 @@ class GiftsController < Sinatra::Base
     gift = Gift.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "gift not found" }.to_json unless gift
 
-    if gift.reserved_by_id && gift.reserved_by_id.to_s != user_id.to_s
+    is_owner    = gift.wishlist.user_id.to_s == user_id.to_s
+    is_reserver = gift.reserved_by_id && gift.reserved_by_id.to_s == user_id.to_s
+
+    if gift.reserved_by_id && !is_owner && !is_reserver
       halt 403, { ok: false, error: "бронь принадлежит другому пользователю" }.to_json
     end
 
