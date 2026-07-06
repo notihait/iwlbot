@@ -85,6 +85,8 @@ class WishlistsController < Sinatra::Base
     end
 
     if wishlist.update(title: title.to_s.strip, event_date: event_date)
+      owner_name = wishlist.user&.first_name || "друга"
+    
       NotifyFollowersService.call(
         wishlist,
         "✏️ #{owner_name} обновил(а) вишлист «#{wishlist.title}»"
@@ -93,7 +95,6 @@ class WishlistsController < Sinatra::Base
     else
       halt 422, { ok: false, error: wishlist.errors.full_messages.join(", ") }.to_json
     end
-  end
 
   # GET WISHLISTS FOR USR
 
@@ -194,17 +195,19 @@ class WishlistsController < Sinatra::Base
 
   delete "/api/wishlists/:id" do
     halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
-
+  
     wishlist = Wishlist.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
-
+  
+    owner_name = wishlist.user&.first_name || "друга"
+  
     NotifyFollowersService.call(
       wishlist,
       "🗑 #{owner_name} удалил(а) вишлист «#{wishlist.title}»"
     )
-
+  
     wishlist.archive!
-
+  
     { ok: true }.to_json
   end
 end
