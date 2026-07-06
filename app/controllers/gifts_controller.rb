@@ -1,5 +1,6 @@
 require "sinatra/base"
 require "json"
+require_relative "../services/notify_followers_service"
 
 class GiftsController < Sinatra::Base
   set :host_authorization, {}
@@ -49,6 +50,11 @@ class GiftsController < Sinatra::Base
     )
 
     gift.save!
+
+    NotifyFollowersService.call(
+      wishlist,
+      "🎁 В вишлисте «#{wishlist.title}» появился новый подарок: #{gift.name}"
+    )
 
     status 201
     { ok: true, id: gift.id }.to_json
@@ -121,18 +127,28 @@ class GiftsController < Sinatra::Base
   post "/api/gifts/:id/reserve" do
     payload = JSON.parse(request.body.read) rescue {}
     user_id = payload["user_id"]
-
+  
     halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
-
+  
     gift = Gift.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "gift not found" }.to_json unless gift
-
+  
     if gift.reserved_by_id && gift.reserved_by_id.to_s != user_id.to_s
       halt 409, { ok: false, error: "подарок уже забронирован" }.to_json
     end
-
+  
+    already_reserved_by_same_user = gift.reserved_by_id.to_s == user_id.to_s
+  
     gift.update!(reserved_by_id: user_id, reserved_at: Time.now)
-
+  
+    wishlist = gift.wishlist
+    if !already_reserved_by_same_user && wishlist.user_id.to_s != user_id.to_s
+      NotifyFollowersService.notify_owner(
+        wishlist,
+        "🔒 Подарок «#{gift.name}» в вишлисте «#{wishlist.title}» кто-то забронировал"
+      )
+    end
+  
     { ok: true }.to_json
   end
 
@@ -141,19 +157,30 @@ class GiftsController < Sinatra::Base
   delete "/api/gifts/:id/reserve" do
     payload = JSON.parse(request.body.read) rescue {}
     user_id = payload["user_id"]
-
+  
     gift = Gift.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "gift not found" }.to_json unless gift
-
-    is_owner    = gift.wishlist.user_id.to_s == user_id.to_s
+  
+    wishlist = gift.wishlist
+  
+    is_owner    = wishlist.user_id.to_s == user_id.to_s
     is_reserver = gift.reserved_by_id && gift.reserved_by_id.to_s == user_id.to_s
-
+  
     if gift.reserved_by_id && !is_owner && !is_reserver
       halt 403, { ok: false, error: "бронь принадлежит другому пользователю" }.to_json
     end
-
+  
+    was_reserved = gift.reserved_by_id.present?
+  
     gift.update!(reserved_by_id: nil, reserved_at: nil)
-
+  
+    if was_reserved && !is_owner
+      NotifyFollowersService.notify_owner(
+        wishlist,
+        "🔓 Бронь с подарка «#{gift.name}» в вишлисте «#{wishlist.title}» снята"
+      )
+    end
+  
     { ok: true }.to_json
   end
 

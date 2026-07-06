@@ -1,6 +1,7 @@
 require "sinatra/base"
 require "json"
 require "date"
+require_relative "../services/notify_followers_service"
 
 class WishlistsController < Sinatra::Base
   set :host_authorization, {}
@@ -84,6 +85,10 @@ class WishlistsController < Sinatra::Base
     end
 
     if wishlist.update(title: title.to_s.strip, event_date: event_date)
+      NotifyFollowersService.call(
+        wishlist,
+        "✏️ Вишлист «#{wishlist.title}» был обновлён"
+      )
       { ok: true }.to_json
     else
       halt 422, { ok: false, error: wishlist.errors.full_messages.join(", ") }.to_json
@@ -177,7 +182,7 @@ class WishlistsController < Sinatra::Base
 
     result.to_json
   end
-  
+
   # DELETE WISHLIST (soft delete / архивация)
 
   delete "/api/wishlists/:id" do
@@ -185,6 +190,11 @@ class WishlistsController < Sinatra::Base
 
     wishlist = Wishlist.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
+
+    NotifyFollowersService.call(
+      wishlist,
+      "🗑 Вишлист «#{wishlist.title}» был удалён владельцем"
+    )
 
     wishlist.archive!
 

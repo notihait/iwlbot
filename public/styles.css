@@ -175,33 +175,44 @@
   
   .tag-card-actions {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
     margin-top: 14px;
   }
   
   .chip-btn {
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     background: var(--surface);
     color: var(--text);
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
-    padding: 7px 4px;
-    border-radius: 999px;
+    padding: 10px 8px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: transform 0.12s ease, background 0.12s ease;
+    transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
   }
   .chip-btn:active { transform: scale(0.96); }
-  .chip-btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-  .chip-btn.danger { color: var(--danger); border-color: #F7D7D8; }
-  .chip-btn.danger:hover { background: #FDEDED; }
+  
+  .chip-btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    grid-column: 1 / -1; /* "Подарки" — на всю ширину сверху, главное действие */
+    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.25);
+  }
+  
+  .chip-btn.danger {
+    color: var(--danger);
+    border-color: #F7D7D8;
+  }
+  .chip-btn.danger:active { background: #FDEDED; }
   
   .gifts-panel { display: none; margin-top: 16px; }
   .gifts-panel.open { display: block; }
