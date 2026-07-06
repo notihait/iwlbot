@@ -174,24 +174,28 @@
   .tag-date.no-date { color: var(--text-muted); background: var(--surface-alt); }
   
   .tag-card-actions {
-    display: flex;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
     margin-top: 14px;
-    flex-wrap: wrap;
   }
   
   .chip-btn {
     border: 1px solid var(--border);
     background: var(--surface);
     color: var(--text);
-    font-size: 12.5px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 8px 12px;
+    padding: 7px 4px;
     border-radius: 999px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    gap: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: transform 0.12s ease, background 0.12s ease;
   }
   .chip-btn:active { transform: scale(0.96); }
