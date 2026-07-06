@@ -2,15 +2,19 @@ require "net/http"
 require "uri"
 
 class NotifyFollowersService
+  BOT_USERNAME = ENV["BOT_USERNAME"] || "IWIshList_bot"
+
   def self.call(wishlist, text, exclude_user_id: nil)
     bot_token = ENV["BOT_TOKEN"]
     return if bot_token.to_s.empty?
+
+    full_text = "#{text}\n\n#{wishlist_link(wishlist)}"
 
     wishlist.followers.each do |follower|
       next if follower.telegram_id.nil?
       next if exclude_user_id && follower.id.to_s == exclude_user_id.to_s
 
-      send_message(bot_token, follower.telegram_id, text)
+      send_message(bot_token, follower.telegram_id, full_text)
     end
   end
 
@@ -22,6 +26,10 @@ class NotifyFollowersService
     return if owner.nil? || owner.telegram_id.nil?
 
     send_message(bot_token, owner.telegram_id, text)
+  end
+
+  def self.wishlist_link(wishlist)
+    "https://t.me/#{BOT_USERNAME}?startapp=wishlist_#{wishlist.public_id}"
   end
 
   def self.send_message(bot_token, chat_id, text)

@@ -53,7 +53,7 @@ class GiftsController < Sinatra::Base
 
     NotifyFollowersService.call(
       wishlist,
-      "🎁 В вишлисте «#{wishlist.title}» появился новый подарок: #{gift.name}"
+      "🎁 #{owner_name} добавил(а) новый подарок в вишлист «#{wishlist.title}»: #{gift.name}"
     )
 
     status 201
