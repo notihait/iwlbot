@@ -1,5 +1,5 @@
 console.log("APP START");
-console.log("VERSION 2026-07-06");
+console.log("VERSION 2026-07-07-security");
 
 const BOT_USERNAME = "IWIshList_bot";
 
@@ -156,6 +156,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   userPillText.textContent = user.first_name || user.username || "гость";
 
   let userId = null;
+  let sessionToken = null;
   let currentGiftWishlistId = null;
   let currentGiftsContainer = null;
   let compressedPicData = null;
@@ -166,6 +167,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   const wishlistsList = document.getElementById("wishlistsList");
   const sharedBanner = document.getElementById("sharedBanner");
+
+  // =========================
+  // AUTH-ОБЁРТКА ДЛЯ FETCH
+  // =========================
+  function authFetch(url, options = {}) {
+    const headers = Object.assign({}, options.headers || {}, {
+      "Authorization": `Bearer ${sessionToken}`
+    });
+    return fetch(url, Object.assign({}, options, { headers }));
+  }
 
   // =========================
   // AUTH
@@ -188,8 +199,10 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     if (!data.ok) throw new Error(data.error || "Auth failed");
     if (!data.user_id) throw new Error("No user_id");
+    if (!data.token) throw new Error("No token");
 
     userId = data.user_id;
+    sessionToken = data.token;
   }
 
   // =========================
@@ -205,7 +218,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       : "";
 
     const link = g.link
-      ? `<a class="gift-link-chip" href="${escapeHtml(g.link)}" target="_blank" rel="noopener">🔗 ссылка</a>`
+      ? `<a class="gift-link-chip" href="${escapeHtml(g.link)}" target="_blank" rel="noopener noreferrer">🔗 ссылка</a>`
       : "";
 
     const removeBtn = readOnly
@@ -295,7 +308,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   async function loadGifts(wishlistId, container, readOnly = false) {
     container.innerHTML = `<div class="gifts-empty">Загрузка подарков…</div>`;
 
-    const res = await fetch(`/api/gifts?wishlist_id=${wishlistId}&viewer_id=${userId || ""}`);
+    const res = await authFetch(`/api/gifts?wishlist_id=${wishlistId}`);
     const gifts = await res.json();
 
     if (!Array.isArray(gifts) || gifts.length === 0) {
@@ -309,7 +322,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       container.querySelectorAll(".gift-remove").forEach((btn) => {
         btn.onclick = async () => {
           const giftId = btn.dataset.giftId;
-          await fetch(`/api/gifts/${giftId}`, { method: "DELETE" });
+          await authFetch(`/api/gifts/${giftId}`, { method: "DELETE" });
           await loadGifts(wishlistId, container, readOnly);
         };
       });
@@ -328,10 +341,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         const giftId = btn.dataset.giftId;
         const method = btn.dataset.reserved === "false" ? "POST" : "DELETE";
         try {
-          const res = await fetch(`/api/gifts/${giftId}/reserve`, {
+          const res = await authFetch(`/api/gifts/${giftId}/reserve`, {
             method,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: userId })
+            body: JSON.stringify({})
           });
           const data = await res.json();
           if (data.ok) {
@@ -376,20 +389,20 @@ window.addEventListener("DOMContentLoaded", async () => {
         <h3>Загрузка…</h3>
       </div>
     `;
-  
+
     try {
-      const res = await fetch(`/api/wishlists/public/${publicId}?viewer_id=${userId || ""}`);
+      const res = await authFetch(`/api/wishlists/public/${publicId}`);
       if (!res.ok) throw new Error("not found");
       const w = await res.json();
       const dateStr = formatDateRu(w.event_date);
       const isOwner = String(w.owner_id) === String(userId);
-  
+
       const followBtn = isOwner
         ? ""
         : `<button class="follow-btn" data-wishlist-id="${w.id}" data-following="${w.is_following}">
             ${w.is_following ? "✓ Вы подписаны" : "🔔 Следить за вишлистом"}
           </button>`;
-  
+
       sharedBanner.innerHTML = `
         <div class="shared-banner">
           <div class="eyebrow">🎁 Вишлист от ${escapeHtml(w.owner_name || "друга")}</div>
@@ -399,18 +412,18 @@ window.addEventListener("DOMContentLoaded", async () => {
           <div class="gifts-grid" id="sharedGiftsGrid"></div>
         </div>
       `;
-  
+
       const btn = sharedBanner.querySelector(".follow-btn");
       if (btn) {
         btn.onclick = async () => {
           const following = btn.dataset.following === "true";
           const method = following ? "DELETE" : "POST";
-  
+
           try {
-            const res = await fetch(`/api/wishlists/${w.id}/follow`, {
+            const res = await authFetch(`/api/wishlists/${w.id}/follow`, {
               method,
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ user_id: userId })
+              body: JSON.stringify({})
             });
             const data = await res.json();
             if (data.ok) {
@@ -425,7 +438,7 @@ window.addEventListener("DOMContentLoaded", async () => {
           }
         };
       }
-  
+
       await loadGifts(w.id, document.getElementById("sharedGiftsGrid"), true);
     } catch (e) {
       console.error("SHARED WISHLIST ERROR:", e);
@@ -444,7 +457,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   async function loadWishlists() {
     if (!userId) return;
 
-    const res = await fetch(`/api/wishlists?user_id=${userId}`);
+    const res = await authFetch(`/api/wishlists`);
     const data = await res.json();
 
     if (!Array.isArray(data) || data.length === 0) {
@@ -526,7 +539,7 @@ window.addEventListener("DOMContentLoaded", async () => {
           async (buttonId) => {
             if (buttonId !== "delete") return;
             try {
-              const res = await fetch(`/api/wishlists/${w.id}`, { method: "DELETE" });
+              const res = await authFetch(`/api/wishlists/${w.id}`, { method: "DELETE" });
               const data = await res.json().catch(() => ({}));
               if (res.ok && data.ok !== false) {
                 card.remove();
@@ -557,7 +570,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const followedList = document.getElementById("followedList");
     if (!userId || !followedList) return;
 
-    const res = await fetch(`/api/wishlists/followed?user_id=${userId}`);
+    const res = await authFetch(`/api/wishlists/followed`);
     const data = await res.json();
 
     if (!Array.isArray(data) || data.length === 0) {
@@ -630,11 +643,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       const isEditing = !!editingWishlistId;
       const url = isEditing ? `/api/wishlists/${editingWishlistId}` : "/api/wishlists";
       const method = isEditing ? "PUT" : "POST";
-      const body = isEditing
-        ? { title, event_date: date || null }
-        : { user_id: userId, title, event_date: date || null };
+      const body = { title, event_date: date || null };
 
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
@@ -738,7 +749,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             price: price ? price.replace(",", ".") : null
           };
 
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)

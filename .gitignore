@@ -33,3 +33,6 @@ build/
 .ruby-version
 .rbenv-version
 .byebug_history
+
+# Project dump
+project_dump.txt

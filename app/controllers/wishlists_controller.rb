@@ -2,10 +2,12 @@ require "sinatra/base"
 require "json"
 require "date"
 require_relative "../services/notify_followers_service"
+require_relative "../helpers/auth_helper"
 
 class WishlistsController < Sinatra::Base
   set :host_authorization, {}
   disable :protection
+  helpers AuthHelper
 
   before do
     content_type :json
@@ -14,14 +16,12 @@ class WishlistsController < Sinatra::Base
   # CREATE WISHLIST
 
   post "/api/wishlists" do
+    user_id = current_user_id!
+
     payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
 
-    user_id    = payload["user_id"]
     title      = payload["title"]
     event_date = payload["event_date"]
-
-    halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
-    halt 400, { ok: false, error: "user_id must be a number" }.to_json unless user_id.to_s.match?(/\A\d+\z/)
 
     halt 400, { ok: false, error: "title required" }.to_json if title.to_s.strip.empty?
     halt 400, { ok: false, error: "title too long (max 255)" }.to_json if title.to_s.length > 255
@@ -55,10 +55,13 @@ class WishlistsController < Sinatra::Base
   # UPDATE WISHLIST
 
   put "/api/wishlists/:id" do
+    user_id = current_user_id!
+
     halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
 
     wishlist = Wishlist.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
+    halt 403, { ok: false, error: "forbidden" }.to_json unless wishlist.user_id.to_s == user_id.to_s
 
     payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
 
@@ -84,7 +87,8 @@ class WishlistsController < Sinatra::Base
 
       NotifyFollowersService.call(
         wishlist,
-        "✏️ #{owner_name} обновил(а) вишлист #{wishlist_link}"
+        "✏️ #{owner_name} обновил(а) вишлист #{wishlist_link}",
+        exclude_user_id: user_id
       )
       { ok: true }.to_json
     else
@@ -92,13 +96,10 @@ class WishlistsController < Sinatra::Base
     end
   end
 
-  # GET WISHLISTS FOR USR
+  # GET WISHLISTS FOR USR (только свои)
 
   get "/api/wishlists" do
-    user_id = params["user_id"]
-
-    halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
-    halt 400, { ok: false, error: "user_id must be a number" }.to_json unless user_id.to_s.match?(/\A\d+\z/)
+    user_id = current_user_id!
 
     Wishlist.active
             .where(user_id: user_id)
@@ -106,15 +107,14 @@ class WishlistsController < Sinatra::Base
             .to_json
   end
 
-  # GET SINGLE WISHLIST BY PUBLIC ID (для расшаренных ссылок)
+  # GET SINGLE WISHLIST BY PUBLIC ID (для расшаренных ссылок — сознательно публичный эндпоинт)
   get "/api/wishlists/public/:public_id" do
-    viewer_id = params["viewer_id"]
+    viewer_id = current_user_id!
 
     wishlist = Wishlist.active.find_by(public_id: params[:public_id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
-    is_following = viewer_id.present? &&
-      WishlistFollow.exists?(wishlist_id: wishlist.id, user_id: viewer_id)
+    is_following = WishlistFollow.exists?(wishlist_id: wishlist.id, user_id: viewer_id)
 
     {
       id: wishlist.id,
@@ -129,18 +129,15 @@ class WishlistsController < Sinatra::Base
   # FOLLOW WISHLIST
 
   post "/api/wishlists/:id/follow" do
-    payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
-    user_id = payload["user_id"]
-
-    halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
+    user_id = current_user_id!
 
     wishlist = Wishlist.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
+    halt 400, { ok: false, error: "нельзя подписаться на свой вишлист" }.to_json if wishlist.user_id.to_s == user_id.to_s
+
     user = User.find_by(id: user_id)
     halt 404, { ok: false, error: "user not found" }.to_json unless user
-
-    halt 400, { ok: false, error: "нельзя подписаться на свой вишлист" }.to_json if wishlist.user_id.to_s == user_id.to_s
 
     WishlistFollow.find_or_create_by!(user: user, wishlist: wishlist)
 
@@ -150,10 +147,7 @@ class WishlistsController < Sinatra::Base
   # UNFOLLOW WISHLIST
 
   delete "/api/wishlists/:id/follow" do
-    payload = JSON.parse(request.body.read) rescue {}
-    user_id = payload["user_id"] || params["user_id"]
-
-    halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
+    user_id = current_user_id!
 
     follow = WishlistFollow.find_by(wishlist_id: params[:id], user_id: user_id)
     follow&.destroy
@@ -164,9 +158,7 @@ class WishlistsController < Sinatra::Base
   # GET FOLLOWED WISHLISTS
 
   get "/api/wishlists/followed" do
-    user_id = params["user_id"]
-
-    halt 400, { ok: false, error: "user_id required" }.to_json if user_id.to_s.strip.empty?
+    user_id = current_user_id!
 
     user = User.find_by(id: user_id)
     halt 404, { ok: false, error: "user not found" }.to_json unless user
@@ -190,17 +182,21 @@ class WishlistsController < Sinatra::Base
   # DELETE WISHLIST (soft delete / архивация)
 
   delete "/api/wishlists/:id" do
+    user_id = current_user_id!
+
     halt 400, { ok: false, error: "invalid id" }.to_json unless params[:id].to_s.match?(/\A\d+\z/)
 
     wishlist = Wishlist.active.find_by(id: params[:id])
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
+    halt 403, { ok: false, error: "forbidden" }.to_json unless wishlist.user_id.to_s == user_id.to_s
 
     owner_name = wishlist.user&.first_name || "друга"
     wishlist_link = NotifyFollowersService.wishlist_link_html(wishlist)
 
     NotifyFollowersService.call(
       wishlist,
-      "🗑 #{owner_name} удалил(а) вишлист #{wishlist_link}"
+      "🗑 #{owner_name} удалил(а) вишлист #{wishlist_link}",
+      exclude_user_id: user_id
     )
 
     wishlist.archive!
