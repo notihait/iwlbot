@@ -370,34 +370,7 @@
     color: #fff;
   }
   
-  /* ---------- input with currency suffix ---------- */
-
-.input-with-suffix {
-  display: flex;
-  align-items: center;
-  border: 1.5px solid var(--border);
-  background: var(--surface-alt);
-  border-radius: var(--radius-sm);
-  padding-right: 14px;
-}
-.input-with-suffix input {
-  border: none !important;
-  background: transparent !important;
-  flex: 1;
-  min-width: 0;
-}
-.input-with-suffix input:focus {
-  outline: none;
-  background: transparent !important;
-}
-.input-suffix {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 15px;
-  flex-shrink: 0;
-  padding-left: 4px;
-}
-
+  
   /* ---------- shared wishlist banner ---------- */
   
   .shared-banner {
