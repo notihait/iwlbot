@@ -347,7 +347,32 @@
     border-radius: var(--radius-sm);
     cursor: pointer;
   }
+  .gift-reserve {
+    width: 100%;
+    border: 1.5px solid transparent;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+  }
   .gift-reserve:active { transform: scale(0.97); }
+
+  /* уже забронировано мной — кнопка "Отменить бронь", менее навязчивая */
+  .gift-reserve[data-reserved="true"] {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* владелец списка снимает чужую бронь — предупреждающий цвет */
+  .gift-reserve.owner-cancel {
+    background: var(--danger);
+    color: #fff;
+  }
   
   .gift-reserved-badge {
     width: 100%;
