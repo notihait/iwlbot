@@ -30,6 +30,17 @@ class NotifyFollowersService
     send_message(bot_token, owner.telegram_id, text, keyboard)
   end
 
+  # Точечное уведомление произвольному пользователю (например, тому,
+  # у кого владелец вишлиста снял бронь с подарка)
+  def self.notify_user(user, text, wishlist: nil)
+    bot_token = ENV["BOT_TOKEN"]
+    return if bot_token.to_s.empty?
+    return if user.nil? || user.telegram_id.nil?
+
+    keyboard = wishlist ? open_app_keyboard(wishlist) : nil
+    send_message(bot_token, user.telegram_id, text, keyboard)
+  end
+
   def self.wishlist_link_html(wishlist)
     url = wishlist_deep_link(wishlist)
     title = escape_html(wishlist.title)
