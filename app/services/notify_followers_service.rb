@@ -54,7 +54,7 @@ class NotifyFollowersService
   def self.open_app_keyboard(wishlist)
     {
       inline_keyboard: [
-        [{ text: "🎁 Открыть в приложении", url: wishlist_deep_link(wishlist) }]
+        [{ text: "Open App", url: wishlist_deep_link(wishlist) }]
       ]
     }
   end
