@@ -78,7 +78,10 @@
     <img id="giftPicPreview" class="pic-preview" style="display:none">
   </div>
   <label for="giftPrice">Цена <span class="optional">— необязательно</span></label>
-  <input id="giftPrice" placeholder="1500" inputmode="decimal">
+  <div class="input-with-suffix">
+    <input id="giftPrice" placeholder="1500" inputmode="decimal">
+    <span class="input-suffix">₽</span>
+  </div>
   <button id="addGift" class="btn btn-accent">Добавить в список</button>
   <p id="giftStatus" class="form-status"></p>
 </section>
