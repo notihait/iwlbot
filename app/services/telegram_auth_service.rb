@@ -4,13 +4,13 @@ require "rack/utils"
 
 class TelegramAuthService
   BOT_TOKEN = ENV.fetch("BOT_TOKEN")
+  MAX_AUTH_AGE = 300 # 5 минут — initData используется один раз при открытии аппа
 
   def self.call(init_data)
     params = Rack::Utils.parse_nested_query(init_data)
     hash = params.delete("hash")
     return nil if hash.nil?
 
-    # все параметры кроме hash
     data_check_string = params.sort.map { |k, v| "#{k}=#{v}" }.join("\n")
 
     secret_key = OpenSSL::HMAC.digest("SHA256", "WebAppData", BOT_TOKEN)
@@ -18,9 +18,8 @@ class TelegramAuthService
 
     return nil unless secure_compare(calculated_hash, hash)
 
-    # проверка auth_date
     auth_date = params["auth_date"].to_i
-    return nil if auth_date.zero? || (Time.now.to_i - auth_date) > 86400
+    return nil if auth_date.zero? || (Time.now.to_i - auth_date) > MAX_AUTH_AGE
 
     raw_user = params["user"]
     return nil if raw_user.to_s.strip.empty?

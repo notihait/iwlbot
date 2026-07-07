@@ -1,6 +1,7 @@
 require "sinatra/base"
 require "json"
 require_relative "../../services/telegram_auth_service"
+require_relative "../../lib/session_token"
 
 class AuthController < Sinatra::Base
   set :host_authorization, {}
@@ -19,6 +20,8 @@ class AuthController < Sinatra::Base
 
     halt 400, { ok: false, error: "telegram auth failed" }.to_json if user_id.nil?
 
-    { ok: true, user_id: user_id }.to_json
+    token = SessionToken.generate(user_id)
+
+    { ok: true, user_id: user_id, token: token }.to_json
   end
 end
