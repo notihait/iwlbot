@@ -162,9 +162,12 @@ class GiftsController < Sinatra::Base
 
     wishlist = gift.wishlist
     if !already_reserved_by_same_user && wishlist.user_id.to_s != user_id.to_s
+      wishlist_link = NotifyFollowersService.wishlist_link_html(wishlist)
+      gift_name = NotifyFollowersService.escape_html(gift.name)
+
       NotifyFollowersService.notify_owner(
         wishlist,
-        "🔒 Подарок «#{gift.name}» в вишлисте «#{wishlist.title}» кто-то забронировал"
+        "🔒 Подарок «#{gift_name}» в вишлисте «#{wishlist_link}» кто-то забронировал"
       )
     end
 
@@ -193,9 +196,12 @@ class GiftsController < Sinatra::Base
     gift.update!(reserved_by_id: nil, reserved_at: nil)
 
     if was_reserved && !is_owner
+      wishlist_link = NotifyFollowersService.wishlist_link_html(wishlist)
+      gift_name = NotifyFollowersService.escape_html(gift.name)
+
       NotifyFollowersService.notify_owner(
         wishlist,
-        "🔓 Бронь с подарка «#{gift.name}» в вишлисте «#{wishlist.title}» снята"
+        "🔓 Бронь с подарка «#{gift_name}» в вишлисте «#{wishlist_link}» снята"
       )
     end
 
