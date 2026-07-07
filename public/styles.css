@@ -507,6 +507,30 @@
     object-fit: cover;
     border-radius: var(--radius-sm);
   }
+
+  /* ---------- input with suffix (ДОБАВЛЕНО: значок ₽ справа внутри поля) ---------- */
+
+  .input-with-suffix {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-with-suffix input {
+    width: 100%;
+    padding-right: 34px; /* чтобы текст не наезжал на значок */
+  }
+
+  .input-suffix {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    pointer-events: none;
+  }
   
   .btn {
     width: 100%;
