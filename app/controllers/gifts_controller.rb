@@ -117,21 +117,16 @@ class GiftsController < Sinatra::Base
   end
 
   # GET GIFTS (публичный просмотр — используется и владельцем, и по расшаренной ссылке)
-  # ВАЖНО: ищем вишлист по public_id (непредсказуемый), а не по числовому id,
-  # чтобы нельзя было перебором получить чужие приватные вишлисты.
 
   get "/api/gifts" do
     viewer_id = current_user_id!
 
-    public_id = params["public_id"]
+    wishlist_id = params["wishlist_id"]
 
-    halt 400, { ok: false, error: "public_id required" }.to_json if public_id.to_s.strip.empty?
-
-    wishlist = Wishlist.active.find_by(public_id: public_id)
-    halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
+    halt 400, { ok: false, error: "wishlist_id required" }.to_json if wishlist_id.to_s.strip.empty?
 
     gifts = Gift.active
-                .where(wishlist_id: wishlist.id)
+                .where(wishlist_id: wishlist_id)
                 .order(created_at: :desc)
 
     result = gifts.map do |g|
@@ -192,7 +187,16 @@ class GiftsController < Sinatra::Base
     is_owner    = wishlist.user_id.to_s == user_id.to_s
     is_reserver = gift.reserved_by_id && gift.reserved_by_id.to_s == user_id.to_s
 
-    if gift.reserved_by_id && !is_owner && !is_reserver
+    if gift.reserved_by_id && !is_owget "/api/gifts" do
+      viewer_id = current_user_id!
+  
+      wishlist_id = params["wishlist_id"]
+  
+      halt 400, { ok: false, error: "wishlist_id required" }.to_json if wishlist_id.to_s.strip.empty?
+  
+      gifts = Gift.active
+                  .where(wishlist_id: wishlist_id)
+                  .order(created_at: :desc)ner && !is_reserver
       halt 403, { ok: false, error: "бронь принадлежит другому пользователю" }.to_json
     end
 
