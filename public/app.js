@@ -1,5 +1,5 @@
 console.log("APP START");
-console.log("VERSION 2026-07-07-security");
+console.log("VERSION 2026-08-12-security-fix");
 
 const BOT_USERNAME = "IWIshList_bot";
 
@@ -158,6 +158,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   let userId = null;
   let sessionToken = null;
   let currentGiftWishlistId = null;
+  let currentGiftPublicId = null;
   let currentGiftsContainer = null;
   let compressedPicData = null;
 
@@ -273,8 +274,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("addGift").textContent = "Добавить в список";
   }
 
-  function openGiftSheetForEdit(gift, wishlistId, container) {
+  function openGiftSheetForEdit(gift, wishlistId, publicId, container) {
     currentGiftWishlistId = wishlistId;
+    currentGiftPublicId = publicId;
     currentGiftsContainer = container;
     editingGiftId = gift.id;
     editingGiftOriginalPic = gift.pic || null;
@@ -305,10 +307,13 @@ window.addEventListener("DOMContentLoaded", async () => {
   // =========================
   // LOAD GIFTS
   // =========================
-  async function loadGifts(wishlistId, container, readOnly = false) {
+  // wishlistId — числовой id (нужен только для POST /api/gifts при создании нового подарка)
+  // publicId   — публичный id вишлиста (используется для GET /api/gifts, чтобы нельзя было
+  //              перебором числовых id смотреть чужие вишлисты)
+  async function loadGifts(wishlistId, publicId, container, readOnly = false) {
     container.innerHTML = `<div class="gifts-empty">Загрузка подарков…</div>`;
 
-    const res = await authFetch(`/api/gifts?wishlist_id=${wishlistId}`);
+    const res = await authFetch(`/api/gifts?public_id=${encodeURIComponent(publicId)}`);
     const gifts = await res.json();
 
     if (!Array.isArray(gifts) || gifts.length === 0) {
@@ -323,7 +328,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         btn.onclick = async () => {
           const giftId = btn.dataset.giftId;
           await authFetch(`/api/gifts/${giftId}`, { method: "DELETE" });
-          await loadGifts(wishlistId, container, readOnly);
+          await loadGifts(wishlistId, publicId, container, readOnly);
         };
       });
 
@@ -331,7 +336,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         btn.onclick = () => {
           const giftId = btn.dataset.giftId;
           const gift = gifts.find((g) => String(g.id) === String(giftId));
-          if (gift) openGiftSheetForEdit(gift, wishlistId, container);
+          if (gift) openGiftSheetForEdit(gift, wishlistId, publicId, container);
         };
       });
     }
@@ -348,7 +353,7 @@ window.addEventListener("DOMContentLoaded", async () => {
           });
           const data = await res.json();
           if (data.ok) {
-            await loadGifts(wishlistId, container, readOnly);
+            await loadGifts(wishlistId, publicId, container, readOnly);
           } else {
             alert(data.error || "Ошибка");
           }
@@ -439,7 +444,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         };
       }
 
-      await loadGifts(w.id, document.getElementById("sharedGiftsGrid"), true);
+      await loadGifts(w.id, publicId, document.getElementById("sharedGiftsGrid"), true);
     } catch (e) {
       console.error("SHARED WISHLIST ERROR:", e);
       sharedBanner.innerHTML = `
@@ -502,7 +507,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       card.querySelector(".toggle-gifts").onclick = async () => {
         const isOpen = panel.classList.toggle("open");
-        if (isOpen) await loadGifts(w.id, grid, false);
+        if (isOpen) await loadGifts(w.id, w.public_id, grid, false);
       };
 
       card.querySelector(".edit-wishlist").onclick = () => {
@@ -556,6 +561,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       card.querySelector(".add-gift-trigger").onclick = () => {
         currentGiftWishlistId = w.id;
+        currentGiftPublicId = w.public_id;
         currentGiftsContainer = grid;
         resetGiftSheet();
         openSheet(sheetGift);
@@ -761,7 +767,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         giftStatus.textContent = isEditing ? "✅ Сохранено" : "✅ Добавлено";
         giftStatus.className = "form-status success";
         if (currentGiftsContainer) {
-          await loadGifts(currentGiftWishlistId, currentGiftsContainer, false);
+          await loadGifts(currentGiftWishlistId, currentGiftPublicId, currentGiftsContainer, false);
         }
         setTimeout(closeSheets, 450);
       } else {
