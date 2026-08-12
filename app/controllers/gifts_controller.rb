@@ -187,16 +187,7 @@ class GiftsController < Sinatra::Base
     is_owner    = wishlist.user_id.to_s == user_id.to_s
     is_reserver = gift.reserved_by_id && gift.reserved_by_id.to_s == user_id.to_s
 
-    if gift.reserved_by_id && !is_owget "/api/gifts" do
-      viewer_id = current_user_id!
-  
-      wishlist_id = params["wishlist_id"]
-  
-      halt 400, { ok: false, error: "wishlist_id required" }.to_json if wishlist_id.to_s.strip.empty?
-  
-      gifts = Gift.active
-                  .where(wishlist_id: wishlist_id)
-                  .order(created_at: :desc)ner && !is_reserver
+    if gift.reserved_by_id && !is_owner && !is_reserver
       halt 403, { ok: false, error: "бронь принадлежит другому пользователю" }.to_json
     end
 
