@@ -117,16 +117,21 @@ class GiftsController < Sinatra::Base
   end
 
   # GET GIFTS (публичный просмотр — используется и владельцем, и по расшаренной ссылке)
+  # ВАЖНО: ищем вишлист по public_id (непредсказуемый), а не по числовому id,
+  # чтобы нельзя было перебором получить чужие приватные вишлисты.
 
   get "/api/gifts" do
     viewer_id = current_user_id!
 
-    wishlist_id = params["wishlist_id"]
+    public_id = params["public_id"]
 
-    halt 400, { ok: false, error: "wishlist_id required" }.to_json if wishlist_id.to_s.strip.empty?
+    halt 400, { ok: false, error: "public_id required" }.to_json if public_id.to_s.strip.empty?
+
+    wishlist = Wishlist.active.find_by(public_id: public_id)
+    halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
 
     gifts = Gift.active
-                .where(wishlist_id: wishlist_id)
+                .where(wishlist_id: wishlist.id)
                 .order(created_at: :desc)
 
     result = gifts.map do |g|
