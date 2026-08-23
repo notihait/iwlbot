@@ -267,6 +267,10 @@ window.addEventListener("DOMContentLoaded", async () => {
       ? `<a class="gift-link-chip" href="${escapeHtml(g.link)}" target="_blank" rel="noopener noreferrer">🔗 ссылка</a>`
       : `<span class="gift-link-chip gift-link-chip--empty">🔗 ссылка</span>`;
 
+      const descriptionPreview = g.description
+      ? `<div class="gift-description-preview">${escapeHtml(g.description)}</div>`
+      : "";
+
     const removeBtn = readOnly
       ? ""
       : `<button class="gift-remove" data-gift-id="${g.id}" aria-label="Удалить подарок">✕</button>`;
@@ -287,11 +291,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         reserveControl = `<button class="gift-reserve" data-gift-id="${g.id}" data-reserved="${g.reserved_by_me}">${label}</button>`;
       }
 
-    return `
+        return `
       <div class="gift-card" data-gift-id="${g.id}">
         <div class="gift-thumb-wrap">${img}${price}</div>
         ${removeBtn}
         <div class="gift-name">${escapeHtml(g.name)}</div>
+        ${descriptionPreview}
         ${link}
         <div class="gift-actions-row">
           ${editBtn}
