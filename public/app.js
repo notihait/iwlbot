@@ -308,6 +308,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("giftName").value = "";
     document.getElementById("giftLink").value = "";
     document.getElementById("giftPrice").value = "";
+    document.getElementById("giftDescription").value = "";
     document.getElementById("giftPicFile").value = "";
     document.getElementById("giftPicPreview").style.display = "none";
     document.getElementById("giftStatus").textContent = "";
@@ -325,10 +326,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     editingGiftId = gift.id;
     editingGiftOriginalPic = gift.pic || null;
     compressedPicData = null;
-
+  
     document.getElementById("giftName").value = gift.name || "";
     document.getElementById("giftLink").value = gift.link || "";
     document.getElementById("giftPrice").value = gift.price || "";
+    document.getElementById("giftDescription").value = gift.description || "";
 
     const preview = document.getElementById("giftPicPreview");
     if (gift.pic) {
@@ -773,6 +775,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const name = document.getElementById("giftName").value.trim();
     const link = document.getElementById("giftLink").value.trim();
     const price = document.getElementById("giftPrice").value.trim();
+    const description = document.getElementById("giftDescription").value.trim();
 
     if (!isValidName(name)) {
       giftStatus.textContent = "❌ Введите название подарка (до 200 символов)";
@@ -797,24 +800,26 @@ window.addEventListener("DOMContentLoaded", async () => {
     // сохраняем ту, что уже была у подарка
     const picToSend = compressedPicData || (editingGiftId ? editingGiftOriginalPic : null);
 
-    try {
-      const isEditing = !!editingGiftId;
-      const url = isEditing ? `/api/gifts/${editingGiftId}` : "/api/gifts";
-      const method = isEditing ? "PUT" : "POST";
-      const body = isEditing
-        ? {
-            name,
-            link: link || null,
-            pic: picToSend || null,
-            price: price ? price.replace(",", ".") : null
-          }
-        : {
-            wishlist_id: currentGiftWishlistId,
-            name,
-            link: link || null,
-            pic: picToSend || null,
-            price: price ? price.replace(",", ".") : null
-          };
+  try {
+    const isEditing = !!editingGiftId;
+    const url = isEditing ? `/api/gifts/${editingGiftId}` : "/api/gifts";
+    const method = isEditing ? "PUT" : "POST";
+    const body = isEditing
+      ? {
+          name,
+          link: link || null,
+          pic: picToSend || null,
+          price: price ? price.replace(",", ".") : null,
+          description: description || null
+        }
+      : {
+          wishlist_id: currentGiftWishlistId,
+          name,
+          link: link || null,
+          pic: picToSend || null,
+          price: price ? price.replace(",", ".") : null,
+          description: description || null
+        };
 
       const res = await authFetch(url, {
         method,

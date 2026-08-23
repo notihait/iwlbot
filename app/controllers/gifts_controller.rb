@@ -9,6 +9,7 @@ class GiftsController < Sinatra::Base
   helpers AuthHelper
 
   MAX_NAME_LENGTH = 200
+  MAX_DESCRIPTION_LENGTH = 2000
   MAX_PIC_BASE64_SIZE = 500_000 # ~500 КБ base64-строки, с запасом на сжатую картинку 300x300
   PRICE_REGEX = /\A\d+(\.\d{1,2})?\z/
   PIC_DATA_URL_REGEX = /\Adata:image\/(png|jpe?g|webp|gif);base64,/
@@ -30,10 +31,12 @@ class GiftsController < Sinatra::Base
     link        = payload["link"]
     pic         = payload["pic"]
     price       = payload["price"]
+    description = payload["description"]
 
     halt 400, { ok: false, error: "wishlist_id required" }.to_json if wishlist_id.to_s.strip.empty?
     halt 400, { ok: false, error: "name required" }.to_json if name.to_s.strip.empty?
     halt 400, { ok: false, error: "name too long" }.to_json if name.to_s.strip.length > MAX_NAME_LENGTH
+    halt 400, { ok: false, error: "description too long" }.to_json if description.to_s.strip.length > MAX_DESCRIPTION_LENGTH
 
     if price && !price.to_s.strip.empty?
       halt 400, { ok: false, error: "price must be a valid number" }.to_json unless price.to_s.strip.match?(PRICE_REGEX)
@@ -56,7 +59,8 @@ class GiftsController < Sinatra::Base
       name: name.strip,
       link: link,
       pic: pic,
-      price: (price && !price.to_s.strip.empty?) ? price : nil
+      price: (price && !price.to_s.strip.empty?) ? price : nil,
+      description: (description && !description.to_s.strip.empty?) ? description.strip : nil
     )
 
     gift.save!
@@ -85,13 +89,15 @@ class GiftsController < Sinatra::Base
 
     payload = JSON.parse(request.body.read) rescue halt(400, { ok: false, error: "invalid json" }.to_json)
 
-    name  = payload["name"]
-    link  = payload["link"]
-    pic   = payload["pic"]
-    price = payload["price"]
+    name        = payload["name"]
+    link        = payload["link"]
+    pic         = payload["pic"]
+    price       = payload["price"]
+    description = payload["description"]
 
     halt 400, { ok: false, error: "name required" }.to_json if name.to_s.strip.empty?
     halt 400, { ok: false, error: "name too long" }.to_json if name.to_s.strip.length > MAX_NAME_LENGTH
+    halt 400, { ok: false, error: "description too long" }.to_json if description.to_s.strip.length > MAX_DESCRIPTION_LENGTH
 
     if price && !price.to_s.strip.empty?
       halt 400, { ok: false, error: "price must be a valid number" }.to_json unless price.to_s.strip.match?(PRICE_REGEX)
@@ -110,7 +116,8 @@ class GiftsController < Sinatra::Base
       name: name.strip,
       link: link,
       pic: pic,
-      price: (price && !price.to_s.strip.empty?) ? price : nil
+      price: (price && !price.to_s.strip.empty?) ? price : nil,
+      description: (description && !description.to_s.strip.empty?) ? description.strip : nil
     )
 
     { ok: true }.to_json
@@ -136,6 +143,7 @@ class GiftsController < Sinatra::Base
         link: g.link,
         pic: g.pic,
         price: g.price,
+        description: g.description,
         reserved: g.reserved_by_id.present?,
         reserved_by_me: g.reserved_by_id.to_s == viewer_id.to_s
       }

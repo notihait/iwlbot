@@ -751,3 +751,20 @@
 .lightbox-description:empty { display: none; }
 
 .gift-card { cursor: pointer; }
+
+.sheet textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+}
+.sheet textarea:focus {
+  border-color: var(--primary);
+  background: #fff;
+}
