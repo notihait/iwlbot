@@ -490,8 +490,8 @@ window.addEventListener("DOMContentLoaded", async () => {
           <button class="chip-btn danger delete-wishlist">🗑 Удалить</button>
         </div>
         <div class="gifts-panel">
-          <div class="gifts-grid"></div>
           <button class="add-gift-trigger">+ Добавить подарок</button>
+          <div class="gifts-grid"></div>
         </div>
       `;
 

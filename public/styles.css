@@ -629,3 +629,26 @@
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   }
+
+  #fabCreate.fab-with-label {
+    width: auto;
+    height: auto;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px 14px 16px;
+  }
+  
+  #fabCreate .fab-icon {
+    font-size: 22px;
+    line-height: 1;
+    font-weight: 700;
+  }
+  
+  #fabCreate .fab-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
