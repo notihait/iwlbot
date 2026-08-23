@@ -216,7 +216,7 @@ class GiftsController < Sinatra::Base
     { ok: true }.to_json
   end
 
-  # DELETE GIFT (soft delete / архивация)
+  # DELETE GIFT (soft delete)
 
   delete "/api/gifts/:id" do
     user_id = current_user_id!
