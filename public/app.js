@@ -127,10 +127,16 @@ const lightboxDescription = document.getElementById("lightboxDescription");
 const lightboxClose = document.getElementById("lightboxClose");
 
 function openGiftPreview(g) {
+  const lightboxImageFallback = document.getElementById("lightboxImageFallback");
+
   if (g.pic) {
     lightboxImage.src = g.pic;
+    lightboxImage.style.display = "block";
+    lightboxImageFallback.style.display = "none";
   } else {
     lightboxImage.removeAttribute("src");
+    lightboxImage.style.display = "none";
+    lightboxImageFallback.style.display = "flex";
   }
 
   lightboxName.textContent = g.name || "";
