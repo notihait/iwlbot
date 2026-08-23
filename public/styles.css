@@ -630,25 +630,30 @@
     * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   }
 
-  #fabCreate.fab-with-label {
-    width: auto;
-    height: auto;
-    border-radius: 999px;
-    display: inline-flex;
+  #fabCreate#fabCreate.fab-with-label {
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
     align-items: center;
     gap: 8px;
-    padding: 14px 20px 14px 16px;
+    padding: 14px 20px 14px 16px !important;
+    white-space: nowrap;
+  }
+  
+  #fabCreate .fab-label {
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
   }
   
   #fabCreate .fab-icon {
     font-size: 22px;
     line-height: 1;
     font-weight: 700;
-  }
-  
-  #fabCreate .fab-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    white-space: nowrap;
+    flex-shrink: 0;
   }
