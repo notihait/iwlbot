@@ -424,24 +424,29 @@
   
   /* ---------- floating action button ---------- */
   
-  .fab {
-    position: fixed;
-    right: 20px;
-    bottom: 24px;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: none;
-    background: linear-gradient(135deg, var(--accent), var(--primary));
-    color: #fff;
-    font-size: 26px;
+  .fab.fab-with-label {
+    width: auto !important;
+    height: auto !important;
+    border-radius: 999px !important;
+    padding: 14px 20px 14px 16px !important;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  
+  .fab.fab-with-label .fab-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  
+  .fab.fab-with-label .fab-icon {
+    font-size: 22px;
     font-weight: 700;
-    box-shadow: 0 10px 26px rgba(232,54,143,0.35);
-    cursor: pointer;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    line-height: 1;
+    flex-shrink: 0;
+  }
   }
   .fab:active { transform: scale(0.94); }
   
