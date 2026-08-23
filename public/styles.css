@@ -645,3 +645,8 @@
     margin-bottom: 14px;
     width: 100%;
   }
+
+  .gift-link-chip--empty {
+    visibility: hidden;
+    pointer-events: none;
+  }

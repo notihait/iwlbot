@@ -217,9 +217,9 @@ window.addEventListener("DOMContentLoaded", async () => {
       ? `<div class="price-tag">${escapeHtml(g.price)} ₽</div>`
       : "";
 
-    const link = g.link
+      const link = g.link
       ? `<a class="gift-link-chip" href="${escapeHtml(g.link)}" target="_blank" rel="noopener noreferrer">🔗 ссылка</a>`
-      : "";
+      : `<span class="gift-link-chip gift-link-chip--empty">🔗 ссылка</span>`;
 
     const removeBtn = readOnly
       ? ""
