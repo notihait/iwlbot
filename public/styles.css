@@ -629,7 +629,7 @@
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   }
-
+  /* ---------- add gift trigger ---------- */
   .add-gift-trigger {
     background: #8b5cf6;
     color: #fff;

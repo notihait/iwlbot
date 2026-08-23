@@ -500,9 +500,20 @@ window.addEventListener("DOMContentLoaded", async () => {
       const panel = card.querySelector(".gifts-panel");
       const grid = card.querySelector(".gifts-grid");
 
-      card.querySelector(".toggle-gifts").onclick = async () => {
+      const toggleBtn = card.querySelector(".toggle-gifts");
+      toggleBtn.onclick = async () => {
         const isOpen = panel.classList.toggle("open");
-        if (isOpen) await loadGifts(w.id, grid, false);
+
+        if (isOpen) {
+          toggleBtn.style.background = "#fff";
+          toggleBtn.style.color = "#8b5cf6";
+          toggleBtn.style.border = "1.5px solid #8b5cf6";
+          await loadGifts(w.id, grid, false);
+        } else {
+          toggleBtn.style.background = "";
+          toggleBtn.style.color = "";
+          toggleBtn.style.border = "";
+        }
       };
 
       card.querySelector(".edit-wishlist").onclick = () => {
