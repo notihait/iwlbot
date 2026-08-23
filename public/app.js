@@ -144,8 +144,10 @@ function openGiftPreview(g) {
 
   if (g.link) {
     lightboxLink.href = g.link;
+    lightboxLink.style.display = "inline-flex";
   } else {
     lightboxLink.removeAttribute("href");
+    lightboxLink.style.display = "none";
   }
 
   // поле description добавится позже миграцией — пока просто скрыто, если его нет
