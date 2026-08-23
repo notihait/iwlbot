@@ -1,5 +1,5 @@
 console.log("APP START");
-console.log("VERSION 2026-07-07-security");
+console.log("VERSION 2026-08-23-gift-lightbox");
 
 const BOT_USERNAME = "IWIshList_bot";
 
@@ -113,6 +113,52 @@ function closeSheets() {
 
 overlay.addEventListener("click", closeSheets);
 
+// =========================
+// GIFT LIGHTBOX (увеличенная карточка подарка)
+// =========================
+
+const lightboxOverlay = document.getElementById("lightboxOverlay");
+const lightbox = document.getElementById("lightbox");
+const lightboxImage = document.getElementById("lightboxImage");
+const lightboxName = document.getElementById("lightboxName");
+const lightboxPrice = document.getElementById("lightboxPrice");
+const lightboxLink = document.getElementById("lightboxLink");
+const lightboxDescription = document.getElementById("lightboxDescription");
+const lightboxClose = document.getElementById("lightboxClose");
+
+function openGiftPreview(g) {
+  if (g.pic) {
+    lightboxImage.src = g.pic;
+  } else {
+    lightboxImage.removeAttribute("src");
+  }
+
+  lightboxName.textContent = g.name || "";
+  lightboxPrice.textContent = g.price ? `${g.price} ₽` : "";
+
+  if (g.link) {
+    lightboxLink.href = g.link;
+  } else {
+    lightboxLink.removeAttribute("href");
+  }
+
+  // поле description добавится позже миграцией — пока просто скрыто, если его нет
+  lightboxDescription.textContent = g.description || "";
+
+  lightboxOverlay.classList.add("visible");
+  lightbox.classList.add("open");
+  lightbox.setAttribute("aria-hidden", "false");
+}
+
+function closeLightbox() {
+  lightboxOverlay.classList.remove("visible");
+  lightbox.classList.remove("open");
+  lightbox.setAttribute("aria-hidden", "true");
+}
+
+lightboxOverlay.addEventListener("click", closeLightbox);
+lightboxClose.addEventListener("click", closeLightbox);
+
 window.addEventListener("DOMContentLoaded", async () => {
 
   const tg = window.Telegram?.WebApp;
@@ -217,7 +263,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       ? `<div class="price-tag">${escapeHtml(g.price)} ₽</div>`
       : "";
 
-      const link = g.link
+    const link = g.link
       ? `<a class="gift-link-chip" href="${escapeHtml(g.link)}" target="_blank" rel="noopener noreferrer">🔗 ссылка</a>`
       : `<span class="gift-link-chip gift-link-chip--empty">🔗 ссылка</span>`;
 
@@ -242,7 +288,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       }
 
     return `
-      <div class="gift-card">
+      <div class="gift-card" data-gift-id="${g.id}">
         <div class="gift-thumb-wrap">${img}${price}</div>
         ${removeBtn}
         <div class="gift-name">${escapeHtml(g.name)}</div>
@@ -317,6 +363,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     container.innerHTML = gifts.map((g) => giftCardHtml(g, readOnly)).join("");
+
+    // клик по карточке (кроме кнопок и ссылки) — открыть увеличенный просмотр
+    container.querySelectorAll(".gift-card").forEach((cardEl) => {
+      cardEl.addEventListener("click", (e) => {
+        if (e.target.closest("button, a")) return;
+        const giftId = cardEl.dataset.giftId;
+        const gift = gifts.find((g) => String(g.id) === String(giftId));
+        if (gift) openGiftPreview(gift);
+      });
+    });
 
     if (!readOnly) {
       container.querySelectorAll(".gift-remove").forEach((btn) => {

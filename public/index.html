@@ -86,6 +86,22 @@
   <p id="giftStatus" class="form-status"></p>
 </section>
 
+<div class="lightbox-overlay" id="lightboxOverlay"></div>
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Закрыть">✕</button>
+  <div class="lightbox-image-wrap" id="lightboxImageWrap">
+    <img id="lightboxImage" class="lightbox-image">
+  </div>
+  <div class="lightbox-info">
+    <h3 id="lightboxName"></h3>
+    <div class="lightbox-meta-row">
+      <span id="lightboxPrice" class="lightbox-price"></span>
+      <a id="lightboxLink" class="gift-link-chip" target="_blank" rel="noopener noreferrer">🔗 ссылка</a>
+    </div>
+    <p id="lightboxDescription" class="lightbox-description"></p>
+  </div>
+</div>
+
 <script src="/app.js?v=9"></script>
 </body>
 </html>
