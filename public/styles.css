@@ -436,6 +436,7 @@
   .shared-banner .gift-thumb-wrap { background: rgba(255,255,255,0.9); }
   .shared-banner .gift-name { color: #fff; }
   .shared-banner .gift-link-chip { color: #fff; text-decoration: underline; }
+  .shared-banner .gift-description-preview { color: rgba(255,255,255,0.75); }
   
   /* ---------- floating action button ---------- */
   
