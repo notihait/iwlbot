@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=7">
+  <link rel="stylesheet" href="/styles.css?v=8">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
@@ -70,21 +70,30 @@
   <label for="giftName">Название</label>
   <input id="giftName" placeholder="Что хотите получить?">
   <label for="giftLink">Ссылка на товар <span class="optional">— необязательно</span></label>
-<input id="giftLink" placeholder="https://…">
+  <input id="giftLink" placeholder="https://…">
 
-<label for="giftDescription">Описание <span class="optional">— необязательно</span></label>
-<textarea id="giftDescription" placeholder="Цвет, размер, важные детали…" rows="3"></textarea>
+  <label for="giftDescription">Описание <span class="optional">— необязательно</span></label>
+  <textarea id="giftDescription" placeholder="Цвет, размер, важные детали…" rows="3"></textarea>
   <label>Фото <span class="optional">— необязательно</span></label>
   <div class="file-drop">
     <label class="file-btn" for="giftPicFile">Выбрать фото</label>
     <input id="giftPicFile" type="file" accept="image/*" hidden>
     <img id="giftPicPreview" class="pic-preview" style="display:none">
   </div>
+
+  <label for="giftCurrency">Валюта</label>
+  <select id="giftCurrency">
+    <option value="RUB">₽ Российский рубль</option>
+    <option value="USD">$ Доллар США</option>
+    <option value="EUR">€ Евро</option>
+    <option value="UAH">₴ Гривна</option>
+    <option value="KZT">₸ Тенге</option>
+    <option value="BYN">Br Белорусский рубль</option>
+  </select>
+
   <label for="giftPrice">Цена <span class="optional">— необязательно</span></label>
-  <div class="input-with-suffix">
-    <input id="giftPrice" placeholder="1500" inputmode="decimal">
-    <span class="input-suffix">₽</span>
-  </div>
+  <input id="giftPrice" placeholder="1500" inputmode="decimal">
+
   <button id="addGift" class="btn btn-accent">Добавить в список</button>
   <p id="giftStatus" class="form-status"></p>
 </section>

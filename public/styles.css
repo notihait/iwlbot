@@ -784,3 +784,34 @@
   border-color: var(--primary);
   background: #fff;
 }
+
+/* ---------- выделение текста (фикс №1) ---------- */
+::selection {
+  background: var(--primary);
+  color: #fff;
+}
+::-moz-selection {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ---------- select валюты (фикс №4) ---------- */
+.sheet select {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'><path fill='%238C7FA3' d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.sheet select:focus {
+  border-color: var(--primary);
+  background-color: #fff;
+}
