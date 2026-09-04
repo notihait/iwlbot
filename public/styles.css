@@ -549,53 +549,48 @@
     border-radius: var(--radius-sm);
   }
 
-  /* ---------- input with suffix (ДОБАВЛЕНО: значок ₽ справа внутри поля) ---------- */
+  /* ---------- цена + валюта в одном поле ---------- */
+.price-currency-wrap {
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid var(--border);
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.price-currency-wrap:focus-within {
+  border-color: var(--primary);
+  background: #fff;
+}
 
-  .input-with-suffix {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
+.price-currency-wrap input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.price-currency-wrap input:focus { border: none !important; }
 
-  .input-with-suffix input {
-    width: 100%;
-    padding-right: 34px; /* чтобы текст не наезжал на значок */
-  }
-
-  .input-suffix {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 15px;
-    font-weight: 600;
-    pointer-events: none;
-  }
-  
-  .btn {
-    width: 100%;
-    border: none;
-    border-radius: var(--radius-sm);
-    padding: 14px;
-    font-size: 15px;
-    font-weight: 700;
-    font-family: 'Inter', sans-serif;
-    margin-top: 22px;
-    cursor: pointer;
-  }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-accent { background: var(--accent); color: #fff; }
-  .btn:active { transform: scale(0.98); }
-  
-  .form-status {
-    min-height: 18px;
-    font-size: 13px;
-    margin: 10px 0 0;
-    font-weight: 600;
-  }
-  .form-status.error { color: var(--danger); }
-  .form-status.success { color: var(--success); }
+.price-currency-wrap select {
+  flex: 0 0 auto;
+  width: auto;
+  border: none;
+  border-left: 1.5px solid var(--border);
+  background: transparent;
+  border-radius: 0;
+  padding: 12px 26px 12px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24'><path fill='%238C7FA3' d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
 
   /* ---------- not telegram screen ---------- */
 

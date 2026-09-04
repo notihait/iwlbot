@@ -81,18 +81,18 @@
     <img id="giftPicPreview" class="pic-preview" style="display:none">
   </div>
 
-  <label for="giftCurrency">Валюта</label>
-  <select id="giftCurrency">
-    <option value="RUB">₽ Российский рубль</option>
-    <option value="USD">$ Доллар США</option>
-    <option value="EUR">€ Евро</option>
-    <option value="UAH">₴ Гривна</option>
-    <option value="KZT">₸ Тенге</option>
-    <option value="BYN">Br Белорусский рубль</option>
-  </select>
-
   <label for="giftPrice">Цена <span class="optional">— необязательно</span></label>
-  <input id="giftPrice" placeholder="1500" inputmode="decimal">
+  <div class="price-currency-wrap">
+    <input id="giftPrice" placeholder="1500" inputmode="decimal">
+    <select id="giftCurrency">
+      <option value="RUB">₽ RUB</option>
+      <option value="USD">$ USD</option>
+      <option value="EUR">€ EUR</option>
+      <option value="UAH">₴ UAH</option>
+      <option value="KZT">₸ KZT</option>
+      <option value="BYN">Br BYN</option>
+    </select>
+  </div>
 
   <button id="addGift" class="btn btn-accent">Добавить в список</button>
   <p id="giftStatus" class="form-status"></p>
