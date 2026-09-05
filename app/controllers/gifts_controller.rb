@@ -15,6 +15,11 @@ class GiftsController < Sinatra::Base
   PIC_DATA_URL_REGEX = /\Adata:image\/(png|jpe?g|webp|gif);base64,/
   LINK_REGEX = /\Ahttps?:\/\//i
 
+  # маппинг строка (как присылает фронт) <-> число (как хранится в БД)
+  CURRENCIES = { "RUB" => 0, "USD" => 1, "EUR" => 2, "UAH" => 3, "KZT" => 4, "BYN" => 5 }.freeze
+  CURRENCY_NAMES = CURRENCIES.invert.freeze
+  DEFAULT_CURRENCY = "RUB"
+
   before do
     content_type :json
   end
@@ -32,6 +37,7 @@ class GiftsController < Sinatra::Base
     pic         = payload["pic"]
     price       = payload["price"]
     description = payload["description"]
+    currency    = payload["currency"]
 
     halt 400, { ok: false, error: "wishlist_id required" }.to_json if wishlist_id.to_s.strip.empty?
     halt 400, { ok: false, error: "name required" }.to_json if name.to_s.strip.empty?
@@ -51,16 +57,23 @@ class GiftsController < Sinatra::Base
       halt 400, { ok: false, error: "image too large" }.to_json if pic.bytesize > MAX_PIC_BASE64_SIZE
     end
 
+    if currency && !currency.to_s.strip.empty?
+      halt 400, { ok: false, error: "invalid currency" }.to_json unless CURRENCIES.key?(currency.to_s.strip.upcase)
+    end
+
     wishlist = Wishlist.active.find_by(id: wishlist_id)
     halt 404, { ok: false, error: "wishlist not found" }.to_json unless wishlist
     halt 403, { ok: false, error: "forbidden" }.to_json unless wishlist.user_id.to_s == user_id.to_s
+
+    currency_code = CURRENCIES.fetch(currency.to_s.strip.upcase, CURRENCIES[DEFAULT_CURRENCY])
 
     gift = wishlist.gifts.new(
       name: name.strip,
       link: link,
       pic: pic,
       price: (price && !price.to_s.strip.empty?) ? price : nil,
-      description: (description && !description.to_s.strip.empty?) ? description.strip : nil
+      description: (description && !description.to_s.strip.empty?) ? description.strip : nil,
+      currency: currency_code
     )
 
     gift.save!
@@ -94,6 +107,7 @@ class GiftsController < Sinatra::Base
     pic         = payload["pic"]
     price       = payload["price"]
     description = payload["description"]
+    currency    = payload["currency"]
 
     halt 400, { ok: false, error: "name required" }.to_json if name.to_s.strip.empty?
     halt 400, { ok: false, error: "name too long" }.to_json if name.to_s.strip.length > MAX_NAME_LENGTH
@@ -112,12 +126,24 @@ class GiftsController < Sinatra::Base
       halt 400, { ok: false, error: "image too large" }.to_json if pic.bytesize > MAX_PIC_BASE64_SIZE
     end
 
+    if currency && !currency.to_s.strip.empty?
+      halt 400, { ok: false, error: "invalid currency" }.to_json unless CURRENCIES.key?(currency.to_s.strip.upcase)
+    end
+
+    # если currency не прислали — оставляем текущую валюту подарка, а не сбрасываем на RUB
+    currency_code = if currency && !currency.to_s.strip.empty?
+      CURRENCIES.fetch(currency.to_s.strip.upcase)
+    else
+      gift.currency
+    end
+
     gift.update!(
       name: name.strip,
       link: link,
       pic: pic,
       price: (price && !price.to_s.strip.empty?) ? price : nil,
-      description: (description && !description.to_s.strip.empty?) ? description.strip : nil
+      description: (description && !description.to_s.strip.empty?) ? description.strip : nil,
+      currency: currency_code
     )
 
     { ok: true }.to_json
@@ -143,6 +169,7 @@ class GiftsController < Sinatra::Base
         link: g.link,
         pic: g.pic,
         price: g.price,
+        currency: CURRENCY_NAMES.fetch(g.currency, DEFAULT_CURRENCY),
         description: g.description,
         reserved: g.reserved_by_id.present?,
         reserved_by_me: g.reserved_by_id.to_s == viewer_id.to_s
