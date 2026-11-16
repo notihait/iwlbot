@@ -15,6 +15,7 @@ Dir["./app/models/*.rb"].each { |file| require file }
 require_relative "./app/controllers/api/auth_controller"
 require_relative "./app/controllers/wishlists_controller"
 require_relative "./app/controllers/gifts_controller"
+require_relative "app/controllers/santa_controller"
 
 class App < Sinatra::Base
 
@@ -30,6 +31,7 @@ class App < Sinatra::Base
   use AuthController
   use WishlistsController
   use GiftsController
+  use SantaController
 
   get "/" do
     cache_control :no_cache, :no_store, :must_revalidate
