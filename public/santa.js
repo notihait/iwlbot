@@ -1,5 +1,5 @@
 // =========================
-// ТАЙНЫЙ САНТА (мини-апп)
+// ТАЙНЫЙ САНТА + СЕЗОННЫЙ БАННЕР (мини-апп)
 // Подключается ДО app.js. Инициализируется из app.js: window.initSanta({...})
 // =========================
 (function () {
@@ -12,12 +12,49 @@
       "not enough participants": "Участников пока недостаточно для жеребьёвки."
     };
   
+    // Иконка Деда Мороза для круглой кнопки.
+    // Если хочется проще — замени всё содержимое на: `<span style="font-size:24px;line-height:1">🎅</span>`
+    const SANTA_ICON = `
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="9" y="16" width="14" height="9" rx="4" fill="#fde2c8"/>
+        <path d="M7 19 C7 28 11 30.5 16 30.5 C21 30.5 25 28 25 19 C23 22.3 20 23 16 23 C12 23 9 22.3 7 19 Z"
+              fill="#fff" stroke="#dc2626" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M7 14 C7 8 11 4 17 4 C20 4 23 5.5 25 8 L25 14 Z" fill="#dc2626"/>
+        <rect x="5" y="13" width="22" height="4.5" rx="2.25" fill="#fff" stroke="#dc2626" stroke-width="1.4"/>
+        <circle cx="26" cy="7.5" r="2.6" fill="#fff" stroke="#dc2626" stroke-width="1.4"/>
+        <circle cx="13.2" cy="20" r="0.9" fill="#1f2937"/>
+        <circle cx="18.8" cy="20" r="0.9" fill="#1f2937"/>
+        <circle cx="16" cy="21.4" r="1.2" fill="#f87171"/>
+      </svg>`;
+  
     const CSS = `
-      .santa-section { margin-top: 24px; }
-      .santa-actions { display: flex; gap: 8px; margin: 0 0 12px; flex-wrap: wrap; }
+      /* --- круглая кнопка Санты (над основной «+») --- */
+      .santa-fab { position: fixed; right: 22px; bottom: 96px; width: 44px; height: 44px; border-radius: 50%;
+        border: 2px solid #dc2626; background: #fff; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 14px rgba(220,38,38,.3); cursor: pointer; padding: 0; z-index: 40; }
+      .santa-fab:active { transform: scale(.94); }
+  
+      /* --- сезонный баннер --- */
+      .santa-banner { position: relative; display: flex; align-items: center; gap: 12px; margin: 0 0 16px;
+        padding: 14px 40px 14px 16px; border-radius: 18px; color: #fff; overflow: hidden;
+        background:
+          radial-gradient(circle at 12% 30%, rgba(255,255,255,.25) 0 2px, transparent 3px),
+          radial-gradient(circle at 70% 20%, rgba(255,255,255,.2) 0 2px, transparent 3px),
+          radial-gradient(circle at 88% 75%, rgba(255,255,255,.25) 0 2px, transparent 3px),
+          radial-gradient(circle at 40% 85%, rgba(255,255,255,.18) 0 2px, transparent 3px),
+          linear-gradient(135deg, #b91c1c 0%, #8b5cf6 100%); }
+      .santa-banner-text { flex: 1; min-width: 0; }
+      .santa-banner-title { font-weight: 700; font-size: 16px; line-height: 1.25; }
+      .santa-banner-sub { font-size: 13px; opacity: .92; margin-top: 3px; line-height: 1.3; }
+      .santa-banner-cta { flex-shrink: 0; border: 0; border-radius: 12px; padding: 9px 12px; font-size: 14px;
+        font-weight: 600; background: #fff; color: #b91c1c; cursor: pointer; }
+      .santa-banner-close { position: absolute; top: 6px; right: 8px; border: 0; background: transparent;
+        color: rgba(255,255,255,.85); font-size: 15px; width: 28px; height: 28px; cursor: pointer; }
+  
+      /* --- окно Санты --- */
       .santa-badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #ede9fe; color: #6d28d9; }
       .santa-badge.drawn { background: #dcfce7; color: #166534; }
-      .santa-modal { position: fixed; inset: 0; z-index: 2000; display: none; }
+      .santa-modal { position: fixed; inset: 0; z-index: 500; display: none; }
       .santa-modal.open { display: block; }
       .santa-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
       .santa-panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 92vh; overflow-y: auto;
@@ -25,6 +62,8 @@
       .santa-panel h2 { margin: 0 0 4px; font-size: 20px; padding-right: 36px; }
       .santa-close { position: absolute; top: 12px; right: 14px; border: 0; background: #f3f4f6; width: 32px; height: 32px;
         border-radius: 16px; font-size: 16px; cursor: pointer; }
+      .santa-back { border: 0; background: transparent; color: #6d28d9; font-size: 14px; font-weight: 600;
+        padding: 0 0 10px; cursor: pointer; }
       .santa-meta { color: #6b7280; font-size: 14px; margin: 4px 0 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
       .santa-block { border: 1px solid #e5e7eb; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
       .santa-block h4 { margin: 0 0 8px; font-size: 15px; }
@@ -44,6 +83,40 @@
       .santa-invite { word-break: break-all; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
     `;
   
+    // ---------- сезонный баннер: данные ----------
+    function pluralDays(n) {
+      const m10 = n % 10, m100 = n % 100;
+      if (m10 === 1 && m100 !== 11) return "день";
+      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return "дня";
+      return "дней";
+    }
+  
+    // Возвращает описание баннера на сегодня или null, если сезона нет.
+    // Сейчас один сезон: Новый год (с 15 ноября по 10 января).
+    function seasonInfo() {
+      const now = new Date();
+      const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  
+      if ((m === 10 && d >= 15) || m === 11) {
+        const days = Math.round((new Date(y + 1, 0, 1) - new Date(y, m, d)) / 86400000);
+        return {
+          key: "ny_" + y,
+          title: `🎄 До Нового года ${days} ${pluralDays(days)}`,
+          sub: "Составь вишлист и сыграй в Тайного Санту",
+          cta: true
+        };
+      }
+      if (m === 0 && d <= 10) {
+        return {
+          key: "ny_" + (y - 1),
+          title: "🎉 С Новым годом!",
+          sub: "Пусть все желания из вишлистов сбываются",
+          cta: false
+        };
+      }
+      return null;
+    }
+  
     window.initSanta = function (ctx) {
       const { authFetch, tg, loadGifts, escapeHtml, formatDateRu, currencySymbol, botUsername } = ctx;
   
@@ -51,23 +124,6 @@
       const styleEl = document.createElement("style");
       styleEl.textContent = CSS;
       document.head.appendChild(styleEl);
-  
-      // ---------- секция на главной ----------
-      const section = document.createElement("div");
-      section.className = "santa-section";
-      section.innerHTML = `
-        <div class="section-head"><h1>🎅 Тайный Санта</h1></div>
-        <div class="santa-actions">
-          <button class="chip-btn primary" id="santaCreateBtn">+ Создать игру</button>
-          <button class="chip-btn" id="santaJoinBtn">🔑 Вступить по коду</button>
-        </div>
-        <div id="santaList"></div>
-      `;
-      const anchor = document.getElementById("followedList");
-      if (anchor) anchor.insertAdjacentElement("afterend", section);
-      else (document.getElementById("mainContent") || document.body).appendChild(section);
-  
-      const listEl = section.querySelector("#santaList");
   
       // ---------- модальное окно ----------
       const modal = document.createElement("div");
@@ -86,6 +142,10 @@
       function closeModal() {
         modal.classList.remove("open");
         bodyEl.innerHTML = "";
+      }
+      function wireBack() {
+        const b = bodyEl.querySelector("#sBack");
+        if (b) b.onclick = showHome;
       }
   
       // ---------- хелперы ----------
@@ -133,9 +193,26 @@
           : `<span class="santa-badge drawn">жеребьёвка проведена</span>`;
       }
   
-      // ---------- список моих игр ----------
+      // ---------- главный экран Санты: список игр ----------
+      function showHome() {
+        openModal(`
+          <h2>🎅 Тайный Санта</h2>
+          <div class="santa-meta">Анонимный обмен подарками с друзьями</div>
+          <div class="santa-row" style="margin-bottom:14px">
+            <button class="santa-btn" id="sNew">+ Создать игру</button>
+            <button class="santa-btn secondary" id="sJoinOpen">🔑 Вступить по коду</button>
+          </div>
+          <div id="santaList"><div class="gifts-empty">Загрузка…</div></div>
+        `);
+        bodyEl.querySelector("#sNew").onclick = renderCreate;
+        bodyEl.querySelector("#sJoinOpen").onclick = () => renderJoin();
+        loadMine();
+      }
+  
       async function loadMine() {
         const { data } = await api("/api/santa/mine");
+        const listEl = bodyEl.querySelector("#santaList");
+        if (!listEl) return; // пользователь уже ушёл с этого экрана
         if (!Array.isArray(data) || data.length === 0) {
           listEl.innerHTML = `<div class="gifts-empty">Пока нет игр. Создай свою или вступи по коду 🎄</div>`;
           return;
@@ -159,6 +236,7 @@
       // ---------- создание игры ----------
       function renderCreate() {
         openModal(`
+          <button class="santa-back" id="sBack">← Назад</button>
           <h2>Новая игра</h2>
           <div class="santa-meta">Тайный Санта</div>
           <input class="santa-input" id="sTitle" placeholder="Название, например «Новый год в офисе»" maxlength="200">
@@ -172,6 +250,7 @@
           <div class="form-status" id="sStatus"></div>
           <button class="santa-btn" id="sCreate">Создать игру</button>
         `);
+        wireBack();
   
         let busy = false;
         bodyEl.querySelector("#sCreate").onclick = async (e) => {
@@ -194,7 +273,6 @@
           e.target.disabled = false;
   
           if (!ok) { status.textContent = "❌ " + errText(data); status.className = "form-status error"; return; }
-          await loadMine();
           openGame(data.id);
         };
       }
@@ -202,12 +280,14 @@
       // ---------- вступление по коду ----------
       function renderJoin(prefill = "") {
         openModal(`
+          <button class="santa-back" id="sBack">← Назад</button>
           <h2>Вступить в игру</h2>
           <div class="santa-meta">Введи код приглашения</div>
           <input class="santa-input" id="sCode" placeholder="Код" value="${escapeHtml(prefill)}" autocapitalize="off" autocomplete="off">
           <div class="form-status" id="sStatus"></div>
           <button class="santa-btn" id="sJoin">Вступить</button>
         `);
+        wireBack();
         bodyEl.querySelector("#sJoin").onclick = (e) => {
           const code = bodyEl.querySelector("#sCode").value.trim();
           if (!code) return;
@@ -230,16 +310,18 @@
           }
           return;
         }
-        await loadMine();
         openGame(data.id);
       }
   
       // ---------- экран игры ----------
       async function openGame(id) {
-        openModal(`<div class="gifts-empty">Загрузка…</div>`);
+        openModal(`<button class="santa-back" id="sBack">← К списку</button><div class="gifts-empty">Загрузка…</div>`);
+        wireBack();
+  
         const { ok, data: g } = await api(`/api/santa/${id}`);
         if (!ok || !g) {
-          openModal(`<h2>Не получилось 😕</h2><div class="santa-meta">${escapeHtml(errText(g))}</div>`);
+          openModal(`<button class="santa-back" id="sBack">← К списку</button><h2>Не получилось 😕</h2><div class="santa-meta">${escapeHtml(errText(g))}</div>`);
+          wireBack();
           return;
         }
   
@@ -248,6 +330,7 @@
         const participants = g.participants || [];
   
         let html = `
+          <button class="santa-back" id="sBack">← К списку</button>
           <h2>🎅 ${escapeHtml(g.title)}</h2>
           <div class="santa-meta">
             ${statusBadge(g)}
@@ -298,8 +381,8 @@
         }
   
         openModal(html);
+        wireBack();
   
-        // --- кнопки приглашения ---
         const copyLink = bodyEl.querySelector("#sCopyLink");
         if (copyLink) copyLink.onclick = () => copyText(inviteLink(g.invite_code));
         const copyCode = bodyEl.querySelector("#sCopyCode");
@@ -319,6 +402,7 @@
         const select = bodyEl.querySelector("#sWishSelect");
         const status = bodyEl.querySelector("#sWishStatus");
         const saveBtn = bodyEl.querySelector("#sWishSave");
+        if (!select) return;
   
         const { data } = await api("/api/wishlists");
         if (!Array.isArray(data) || data.length === 0) {
@@ -351,7 +435,6 @@
             notify(errText(data));
             return;
           }
-          await loadMine();
           openGame(g.id);
         };
   
@@ -372,6 +455,7 @@
       // ---------- «кому я дарю» ----------
       async function renderTarget(g) {
         const block = bodyEl.querySelector("#sTargetBlock");
+        if (!block) return;
         const { ok, data } = await api(`/api/santa/${g.id}/my-target`);
         if (!ok || !data?.receiver) {
           block.innerHTML = `<h4>Тебе выпал(а)</h4><div class="gifts-empty">${escapeHtml(errText(data))}</div>`;
@@ -392,12 +476,73 @@
         }
       }
   
-      // ---------- события ----------
-      section.querySelector("#santaCreateBtn").onclick = renderCreate;
-      section.querySelector("#santaJoinBtn").onclick = () => renderJoin();
+      // ---------- круглая кнопка над основной «+» ----------
+      function mountFab() {
+        const mainFab = document.getElementById("fabCreate");
+        const btn = document.createElement("button");
+        btn.className = "santa-fab";
+        btn.type = "button";
+        btn.setAttribute("aria-label", "Тайный Санта");
+        btn.innerHTML = SANTA_ICON;
+        btn.onclick = showHome;
+        document.body.appendChild(btn);
+        if (!mainFab) return;
   
-      loadMine();
+        let raf = null;
+        function place() {
+          raf = null;
+          const r = mainFab.getBoundingClientRect();
+          if (!r.width) return;
+          const size = 44;
+          // центрируем над основной кнопкой, на 12px выше неё
+          btn.style.right = Math.max(0, window.innerWidth - r.right + (r.width - size) / 2) + "px";
+          btn.style.bottom = Math.max(0, window.innerHeight - r.top + 12) + "px";
+          const z = parseInt(getComputedStyle(mainFab).zIndex, 10);
+          btn.style.zIndex = isNaN(z) ? 40 : z;
+        }
+        const schedule = () => { if (!raf) raf = requestAnimationFrame(place); };
   
-      return { joinByCode: (code) => joinByCode(code), reload: loadMine };
+        place();
+        setTimeout(place, 300);
+        window.addEventListener("resize", schedule);
+        window.addEventListener("scroll", schedule, { passive: true });
+        if (tg?.onEvent) tg.onEvent("viewportChanged", schedule);
+      }
+  
+      // ---------- сезонный баннер ----------
+      function mountBanner() {
+        const season = seasonInfo();
+        if (!season) return;
+  
+        const storageKey = "santa_banner_closed_" + season.key;
+        try { if (localStorage.getItem(storageKey)) return; } catch (e) { /* хранилище недоступно */ }
+  
+        const host = document.getElementById("mainContent");
+        if (!host) return;
+  
+        const banner = document.createElement("div");
+        banner.className = "santa-banner";
+        banner.innerHTML = `
+          <button class="santa-banner-close" aria-label="Скрыть">✕</button>
+          <div class="santa-banner-text">
+            <div class="santa-banner-title">${escapeHtml(season.title)}</div>
+            <div class="santa-banner-sub">${escapeHtml(season.sub)}</div>
+          </div>
+          ${season.cta ? `<button class="santa-banner-cta">🎅 Играть</button>` : ""}
+        `;
+        host.insertBefore(banner, host.firstChild);
+  
+        banner.querySelector(".santa-banner-close").onclick = () => {
+          banner.remove();
+          try { localStorage.setItem(storageKey, "1"); } catch (e) { /* ничего страшного */ }
+        };
+        const cta = banner.querySelector(".santa-banner-cta");
+        if (cta) cta.onclick = showHome;
+      }
+  
+      mountBanner();
+      mountFab();
+  
+      return { open: showHome, joinByCode: (code) => joinByCode(code) };
     };
   })();
