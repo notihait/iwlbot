@@ -64,7 +64,7 @@ class SantaController < Sinatra::Base
     { ok: true, id: event.id, invite_code: event.invite_code }.to_json
   end
 
-  # JOIN BY INVITE CODE
+  # JOIN BY INVITE CODE (повторное вступление безопасно: вернёт ok и id)
 
   post "/api/santa/join/:code" do
     user_id = current_user_id!
@@ -88,6 +88,41 @@ class SantaController < Sinatra::Base
     { ok: true, id: event.id }.to_json
   end
 
+  # LEAVE EVENT (только до жеребьёвки, не для создателя)
+
+  post "/api/santa/:id/leave" do
+    user_id = current_user_id!
+
+    event = SantaEvent.find_by(id: params[:id])
+    halt 404, { ok: false, error: "event not found" }.to_json unless event
+    halt 403, { ok: false, error: "owner cannot leave" }.to_json if event.owner_id.to_s == user_id.to_s
+
+    participant = SantaParticipant.find_by(santa_event_id: event.id, user_id: user_id)
+    halt 404, { ok: false, error: "not a participant" }.to_json unless participant
+    halt 409, { ok: false, error: "already drawn" }.to_json unless event.open?
+
+    participant.destroy
+    { ok: true }.to_json
+  end
+
+  # DELETE EVENT (только создатель)
+
+  delete "/api/santa/:id" do
+    user_id = current_user_id!
+
+    event = SantaEvent.find_by(id: params[:id])
+    halt 404, { ok: false, error: "event not found" }.to_json unless event
+    halt 403, { ok: false, error: "forbidden" }.to_json unless event.owner_id.to_s == user_id.to_s
+
+    SantaEvent.transaction do
+      SantaAssignment.where(santa_event_id: event.id).delete_all
+      SantaParticipant.where(santa_event_id: event.id).delete_all
+      event.destroy
+    end
+
+    { ok: true }.to_json
+  end
+
   # CHOOSE WISHLIST FOR THE GAME
 
   put "/api/santa/:id/wishlist" do
@@ -101,7 +136,7 @@ class SantaController < Sinatra::Base
     { ok: true }.to_json
   end
 
-  # MY EVENTS (для баннера и карточек на главной)
+  # MY EVENTS
 
   get "/api/santa/mine" do
     user_id = current_user_id!
@@ -116,6 +151,8 @@ class SantaController < Sinatra::Base
         id: e.id,
         title: e.title,
         exchange_date: e.exchange_date,
+        budget: e.budget,
+        currency: e.currency,
         status: e.status,
         is_owner: e.owner_id.to_s == user_id.to_s,
         target_name: target&.first_name
@@ -123,7 +160,7 @@ class SantaController < Sinatra::Base
     end.to_json
   end
 
-  # EVENT DETAILS (лобби)
+  # EVENT DETAILS
 
   get "/api/santa/:id" do
     user_id = current_user_id!
@@ -176,7 +213,7 @@ class SantaController < Sinatra::Base
     { ok: true }.to_json
   end
 
-  # MY TARGET (приватность: ищем только по giver_id = я)
+  # MY TARGET
 
   get "/api/santa/:id/my-target" do
     user_id = current_user_id!
