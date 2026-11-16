@@ -9,11 +9,11 @@
       "event not found": "Игра не найдена. Проверь код.",
       "already drawn": "Жеребьёвка уже проведена.",
       "forbidden": "Это может сделать только создатель игры.",
-      "not enough participants": "Участников пока недостаточно для жеребьёвки."
+      "not enough participants": "Участников пока недостаточно для жеребьёвки.",
+      "owner cannot leave": "Создатель не может выйти из игры — можно только удалить её.",
+      "not a participant": "Ты не участник этой игры."
     };
   
-    // Иконка Деда Мороза для круглой кнопки.
-    // Если хочется проще — замени всё содержимое на: `<span style="font-size:24px;line-height:1">🎅</span>`
     const SANTA_ICON = `
       <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
         <rect x="9" y="16" width="14" height="9" rx="4" fill="#fde2c8"/>
@@ -28,13 +28,11 @@
       </svg>`;
   
     const CSS = `
-      /* --- круглая кнопка Санты (над основной «+») --- */
       .santa-fab { position: fixed; right: 22px; bottom: 96px; width: 44px; height: 44px; border-radius: 50%;
         border: 2px solid #dc2626; background: #fff; display: flex; align-items: center; justify-content: center;
         box-shadow: 0 4px 14px rgba(220,38,38,.3); cursor: pointer; padding: 0; z-index: 40; }
       .santa-fab:active { transform: scale(.94); }
   
-      /* --- сезонный баннер --- */
       .santa-banner { position: relative; display: flex; align-items: center; gap: 12px; margin: 0 0 16px;
         padding: 14px 40px 14px 16px; border-radius: 18px; color: #fff; overflow: hidden;
         background:
@@ -51,7 +49,6 @@
       .santa-banner-close { position: absolute; top: 6px; right: 8px; border: 0; background: transparent;
         color: rgba(255,255,255,.85); font-size: 15px; width: 28px; height: 28px; cursor: pointer; }
   
-      /* --- окно Санты --- */
       .santa-badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #ede9fe; color: #6d28d9; }
       .santa-badge.drawn { background: #dcfce7; color: #166534; }
       .santa-modal { position: fixed; inset: 0; z-index: 500; display: none; }
@@ -74,6 +71,7 @@
       .santa-btn { border: 0; border-radius: 12px; padding: 12px 14px; font-size: 15px; font-weight: 600; cursor: pointer;
         background: #8b5cf6; color: #fff; width: 100%; }
       .santa-btn.secondary { background: #ede9fe; color: #6d28d9; }
+      .santa-btn.danger { background: #fee2e2; color: #b91c1c; margin-top: 12px; }
       .santa-btn[disabled] { opacity: .6; }
       .santa-plist { list-style: none; margin: 0; padding: 0; }
       .santa-plist li { padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: 15px; }
@@ -83,7 +81,6 @@
       .santa-invite { word-break: break-all; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
     `;
   
-    // ---------- сезонный баннер: данные ----------
     function pluralDays(n) {
       const m10 = n % 10, m100 = n % 100;
       if (m10 === 1 && m100 !== 11) return "день";
@@ -91,8 +88,6 @@
       return "дней";
     }
   
-    // Возвращает описание баннера на сегодня или null, если сезона нет.
-    // Сейчас один сезон: Новый год (с 15 ноября по 10 января).
     function seasonInfo() {
       const now = new Date();
       const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
@@ -120,12 +115,10 @@
     window.initSanta = function (ctx) {
       const { authFetch, tg, loadGifts, escapeHtml, formatDateRu, currencySymbol, botUsername } = ctx;
   
-      // ---------- стили ----------
       const styleEl = document.createElement("style");
       styleEl.textContent = CSS;
       document.head.appendChild(styleEl);
   
-      // ---------- модальное окно ----------
       const modal = document.createElement("div");
       modal.className = "santa-modal";
       modal.innerHTML = `<div class="santa-backdrop"></div><div class="santa-panel"><button class="santa-close" aria-label="Закрыть">✕</button><div class="santa-body"></div></div>`;
@@ -148,7 +141,6 @@
         if (b) b.onclick = showHome;
       }
   
-      // ---------- хелперы ----------
       async function api(url, method = "GET", body) {
         const opts = { method };
         if (body !== undefined) {
@@ -193,7 +185,22 @@
           : `<span class="santa-badge drawn">жеребьёвка проведена</span>`;
       }
   
-      // ---------- главный экран Санты: список игр ----------
+      // ---------- универсальное подтверждение ----------
+      function askConfirm({ title, message, okText }, onYes) {
+        if (tg?.showPopup) {
+          tg.showPopup({
+            title, message,
+            buttons: [
+              { id: "cancel", type: "cancel" },
+              { id: "ok", type: "destructive", text: okText }
+            ]
+          }, (id) => { if (id === "ok") onYes(); });
+        } else if (confirm(title + "\n" + message)) {
+          onYes();
+        }
+      }
+  
+      // ---------- главный экран ----------
       function showHome() {
         openModal(`
           <h2>🎅 Тайный Санта</h2>
@@ -212,7 +219,7 @@
       async function loadMine() {
         const { data } = await api("/api/santa/mine");
         const listEl = bodyEl.querySelector("#santaList");
-        if (!listEl) return; // пользователь уже ушёл с этого экрана
+        if (!listEl) return;
         if (!Array.isArray(data) || data.length === 0) {
           listEl.innerHTML = `<div class="gifts-empty">Пока нет игр. Создай свою или вступи по коду 🎄</div>`;
           return;
@@ -233,7 +240,7 @@
         });
       }
   
-      // ---------- создание игры ----------
+      // ---------- создание ----------
       function renderCreate() {
         openModal(`
           <button class="santa-back" id="sBack">← Назад</button>
@@ -277,7 +284,7 @@
         };
       }
   
-      // ---------- вступление по коду ----------
+      // ---------- вступление ----------
       function renderJoin(prefill = "") {
         openModal(`
           <button class="santa-back" id="sBack">← Назад</button>
@@ -380,6 +387,13 @@
             </div>`;
         }
   
+        // выйти / удалить
+        if (g.is_owner) {
+          html += `<button class="santa-btn danger" id="sDelete">🗑 Удалить игру</button>`;
+        } else if (isOpen) {
+          html += `<button class="santa-btn danger" id="sLeave">🚪 Покинуть игру</button>`;
+        }
+  
         openModal(html);
         wireBack();
   
@@ -387,6 +401,11 @@
         if (copyLink) copyLink.onclick = () => copyText(inviteLink(g.invite_code));
         const copyCode = bodyEl.querySelector("#sCopyCode");
         if (copyCode) copyCode.onclick = () => copyText(g.invite_code);
+  
+        const delBtn = bodyEl.querySelector("#sDelete");
+        if (delBtn) delBtn.onclick = () => confirmDelete(g);
+        const leaveBtn = bodyEl.querySelector("#sLeave");
+        if (leaveBtn) leaveBtn.onclick = () => confirmLeave(g);
   
         if (isOpen) {
           await setupWishlistPicker(g);
@@ -424,32 +443,43 @@
         };
       }
   
-      // ---------- жеребьёвка ----------
+      // ---------- жеребьёвка / выход / удаление ----------
       function confirmDraw(g) {
-        const run = async () => {
+        askConfirm({
+          title: "Провести жеребьёвку?",
+          message: "После этого новые участники вступить не смогут, а пары изменить нельзя.",
+          okText: "Провести"
+        }, async () => {
           const btn = bodyEl.querySelector("#sDraw");
           if (btn) btn.disabled = true;
           const { ok, data } = await api(`/api/santa/${g.id}/draw`, "POST", {});
-          if (!ok) {
-            if (btn) btn.disabled = false;
-            notify(errText(data));
-            return;
-          }
+          if (!ok) { if (btn) btn.disabled = false; notify(errText(data)); return; }
           openGame(g.id);
-        };
+        });
+      }
   
-        if (tg?.showPopup) {
-          tg.showPopup({
-            title: "Провести жеребьёвку?",
-            message: "После этого новые участники вступить не смогут, а пары изменить нельзя.",
-            buttons: [
-              { id: "cancel", type: "cancel" },
-              { id: "go", type: "default", text: "Провести" }
-            ]
-          }, (id) => { if (id === "go") run(); });
-        } else if (confirm("Провести жеребьёвку? Это нельзя отменить.")) {
-          run();
-        }
+      function confirmLeave(g) {
+        askConfirm({
+          title: "Покинуть игру?",
+          message: "Ты уйдёшь из списка участников. Вернуться можно будет по ссылке.",
+          okText: "Покинуть"
+        }, async () => {
+          const { ok, data } = await api(`/api/santa/${g.id}/leave`, "POST", {});
+          if (!ok) { notify(errText(data)); return; }
+          showHome();
+        });
+      }
+  
+      function confirmDelete(g) {
+        askConfirm({
+          title: "Удалить игру?",
+          message: "Игра исчезнет у всех участников. Это нельзя отменить.",
+          okText: "Удалить"
+        }, async () => {
+          const { ok, data } = await api(`/api/santa/${g.id}`, "DELETE");
+          if (!ok) { notify(errText(data)); return; }
+          showHome();
+        });
       }
   
       // ---------- «кому я дарю» ----------
@@ -476,7 +506,7 @@
         }
       }
   
-      // ---------- круглая кнопка над основной «+» ----------
+      // ---------- круглая кнопка ----------
       function mountFab() {
         const mainFab = document.getElementById("fabCreate");
         const btn = document.createElement("button");
@@ -494,7 +524,6 @@
           const r = mainFab.getBoundingClientRect();
           if (!r.width) return;
           const size = 44;
-          // центрируем над основной кнопкой, на 12px выше неё
           btn.style.right = Math.max(0, window.innerWidth - r.right + (r.width - size) / 2) + "px";
           btn.style.bottom = Math.max(0, window.innerHeight - r.top + 12) + "px";
           const z = parseInt(getComputedStyle(mainFab).zIndex, 10);
