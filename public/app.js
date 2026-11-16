@@ -956,13 +956,18 @@ window.addEventListener("DOMContentLoaded", async () => {
   };
 
   // =========================
-  // INIT
+   // INIT
   // =========================
   try {
     await auth();
     userPillText.textContent = user.first_name || user.username || "гость";
     await loadWishlists();
     await loadFollowedWishlists();
+
+    window.santa = initSanta({
+      authFetch, tg, loadGifts, escapeHtml, formatDateRu, currencySymbol,
+      botUsername: BOT_USERNAME
+    });
   } catch (e) {
     console.error("AUTH ERROR:", e);
     userPillText.textContent = "ошибка авторизации";
@@ -978,6 +983,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (startParam && startParam.startsWith("wishlist_")) {
     const sharedId = startParam.replace("wishlist_", "");
     await showSharedWishlist(sharedId);
+  }
+
+  if (startParam && startParam.startsWith("santa_") && window.santa) {
+    await window.santa.joinByCode(startParam.replace("santa_", ""));
   }
 
 });
