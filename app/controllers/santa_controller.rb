@@ -38,10 +38,14 @@ class SantaController < Sinatra::Base
     halt 400, { ok: false, error: "title required" }.to_json if title.empty?
     halt 400, { ok: false, error: "title too long" }.to_json if title.length > MAX_TITLE_LENGTH
 
-    date = begin
-      Date.iso8601(payload["exchange_date"].to_s)
-    rescue ArgumentError
-      halt 400, { ok: false, error: "exchange_date must be YYYY-MM-DD" }.to_json
+    raw_date = payload["exchange_date"].to_s.strip
+    date = nil
+    unless raw_date.empty?
+      date = begin
+        Date.iso8601(raw_date)
+      rescue ArgumentError
+        halt 400, { ok: false, error: "exchange_date must be YYYY-MM-DD" }.to_json
+      end
     end
 
     budget = payload["budget"]

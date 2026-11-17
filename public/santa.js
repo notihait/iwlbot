@@ -13,7 +13,7 @@
     "not drawn yet": "Жеребьёвка ещё не проведена.",
     "title required": "Введи название игры.",
     "title too long": "Название слишком длинное.",
-    "exchange_date must be YYYY-MM-DD": "Укажи дату обмена подарками.",
+    "exchange_date must be YYYY-MM-DD": "Неверный формат даты.",
     "owner cannot leave": "Создатель не может выйти из игры — можно только удалить её.",
     "not a participant": "Ты не участник этой игры."
   };
