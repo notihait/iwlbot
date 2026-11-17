@@ -1,6 +1,7 @@
 require "sinatra/base"
 require "json"
 require_relative "../helpers/auth_helper"
+require_relative "../lib/santa_notifier"
 
 class SantaController < Sinatra::Base
   set :host_authorization, {}
@@ -164,7 +165,7 @@ class SantaController < Sinatra::Base
 
   get "/api/santa/:id" do
     user_id = current_user_id!
-    find_participant!(params[:id], user_id)
+    me = find_participant!(params[:id], user_id)
 
     event = SantaEvent.find(params[:id])
     participants = event.santa_participants.includes(:user).map do |p|
@@ -180,6 +181,7 @@ class SantaController < Sinatra::Base
       status: event.status,
       invite_code: event.invite_code,
       is_owner: event.owner_id.to_s == user_id.to_s,
+      my_wishlist_id: me.wishlist_id,
       participants: participants
     }.to_json
   end
@@ -209,6 +211,15 @@ class SantaController < Sinatra::Base
 
     halt 422, { ok: false, error: "need at least 3 participants" }.to_json if too_few
     halt 409, { ok: false, error: "already drawn" }.to_json unless done
+
+    # уведомления в Telegram, в фоне, чтобы не задерживать ответ
+    Thread.new do
+      begin
+        SantaNotifier.drawn(event.reload)
+      rescue => e
+        warn "[santa] notify failed: #{e.class}: #{e.message}"
+      end
+    end
 
     { ok: true }.to_json
   end
